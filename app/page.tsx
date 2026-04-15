@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Clock, Target, RotateCcw, Check, Eye, EyeOff, Pill, Bell, BellRing, X, AlertCircle, Undo } from "lucide-react";
+import { Clock, Target, RotateCcw, Check, Eye, EyeOff, Pill, Bell, BellRing, X, AlertCircle } from "lucide-react";
 
 // Custom SVG Pokeball Icon (Now a PokéPill!)
 const PokeballIcon = ({
@@ -209,17 +209,6 @@ function AppContent() {
     localStorage.removeItem("pokeMed_cutoffModalShown");
   };
 
-  const handleUndo = () => {
-    setCompletedSteps((prev) => {
-      const keys = Object.keys(prev).map(Number);
-      if (keys.length === 0) return prev;
-      const maxKey = Math.max(...keys);
-      const newState = { ...prev };
-      delete newState[maxKey];
-      return newState;
-    });
-  };
-
   const completeStep = (step: number) => {
     if (animatingStep !== null || completedSteps[step]) return;
     setAnimatingStep(step);
@@ -374,14 +363,13 @@ function AppContent() {
 
   return (
     <div className="relative min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8 overflow-hidden">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white focus:text-black">Skip to main content</a>
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className={`absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] ${THEMES[level].glowBg} opacity-60 rounded-full transition-colors duration-700 transform-gpu`} />
       </div>
 
       {showCutoffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm motion-safe:animate-in fade-in duration-200 overscroll-contain">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-100 motion-safe:animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" aria-hidden="true">
                 <AlertCircle className="w-6 h-6" />
@@ -408,14 +396,14 @@ function AppContent() {
         </div>
       )}
 
-      <main id="main-content" className="relative z-10 max-w-md mx-auto space-y-8 pb-32">
+      <main className="relative z-10 max-w-md mx-auto space-y-8">
         <div className="text-center space-y-2 mt-4">
           <div className="flex justify-center mb-4">
             <div className={`p-4 rounded-[2rem] transition-colors duration-300 ${THEMES[level].headerIconBg}`}>
               <PokeballIcon className={`w-8 h-8 transition-colors duration-300 ${THEMES[level].headerIconText}`} aria-hidden="true" />
             </div>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-balance">Ritalin, I Choose You!</h1>
+          <h1 className="text-3xl font-black tracking-tight">Ritalin, I Choose You!</h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
             Gotta catch all {PROTOCOLS[level].maxDoses} pills
           </p>
@@ -423,12 +411,12 @@ function AppContent() {
 
         {(!isStarted || isAllComplete) && (
           <section className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 sm:gap-4" aria-label="Select Protocol Level">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4" role="radiogroup" aria-label="Select Protocol Level">
               {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => (
                 <button
                   key={l}
-                  
-                  aria-pressed={level === l}
+                  role="radio"
+                  aria-checked={level === l}
                   onClick={() => {
                     if (Object.keys(completedSteps).length > 1) {
                       if (confirm("Changing level will reset your schedule. Continue?")) {
@@ -495,7 +483,7 @@ function AppContent() {
             </div>
 
             {startTime && (
-              <div className="pt-2 motion-safe:animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="pt-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <button
                   onClick={startSchedule}
                   className={`w-full py-4 rounded-2xl font-black text-white transition-[transform,opacity,box-shadow] motion-safe:hover:-translate-y-1 motion-safe:active:scale-95 ${THEMES[level].pillSolidBg} shadow-xl hover:shadow-2xl text-lg flex items-center justify-center gap-2`}
@@ -509,70 +497,93 @@ function AppContent() {
         )}
 
         {isStarted && schedule.length > 0 && (
-          <section className="pt-2 motion-safe:animate-in fade-in zoom-in-95 duration-500" aria-live="polite">
+          <section className="pt-2 animate-in fade-in zoom-in-95 duration-500" aria-live="polite">
             {!isAllComplete ? (
               nextDose && (
-                <div className="space-y-3">
-                  <div className="flex justify-end items-end px-2">
-                    <span className="text-sm font-black text-zinc-700 dark:text-zinc-300 tabular-nums bg-zinc-200/50 dark:bg-zinc-800/50 px-3 py-1 rounded-full">
-                      {completedPortions} / {totalPortions} Pills Taken
-                    </span>
-                  </div>
-                  <div className={`relative overflow-hidden p-6 sm:p-8 rounded-[2rem] border-2 ${THEMES[level].activeBorder} ${THEMES[level].activeBg} shadow-xl transition-colors duration-500`}>
-                    <div 
-                      key={nextDose.doseNumber}
-                      className={`flex items-center justify-between motion-safe:animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out ${animatingStep === nextDose.doseNumber ? 'scale-95 opacity-0 transition-[transform,opacity] duration-500' : 'transition-[transform,opacity] duration-500'}`}
-                    >
-                      <div>
-                        <div className="text-sm font-bold text-zinc-900/60 dark:text-white/60 mb-1">
-                          Next Dose
-                        </div>
-                        <h2 className="text-5xl font-black tracking-tight text-balance tabular-nums text-zinc-900 dark:text-white">
-                          {nextDose.timeLabel}
-                        </h2>
+                <div className={`relative overflow-hidden p-6 sm:p-8 rounded-[2rem] border-2 ${THEMES[level].activeBorder} ${THEMES[level].activeBg} shadow-xl transition-colors duration-500`}>
+                  <div className={`flex items-center justify-between transition-[transform,opacity] duration-500 ${animatingStep === nextDose.doseNumber ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}>
+                    <div>
+                      <p className={`text-sm font-black uppercase tracking-widest mb-1 ${THEMES[level].headerIconText}`}>
+                        Step {nextDose.doseNumber}
+                      </p>
+                      <h2 className="text-5xl font-black tracking-tight mb-3 tabular-nums">
+                        {nextDose.timeLabel}
+                      </h2>
+                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-bold bg-white/50 dark:bg-black/20 w-fit px-3 py-1.5 rounded-xl">
+                        <Pill className="w-4 h-4" aria-hidden="true" />
+                        {nextDose.portions}&nbsp;{nextDose.portions === 1 ? "Pill" : "Pills"}
                       </div>
-                      
-                      <button
-                        onClick={() => completeStep(nextDose.doseNumber)}
-                        aria-label="Mark dose as complete"
-                        className={`w-20 h-20 flex-shrink-0 rounded-full flex items-center justify-center transition-[transform,box-shadow,background-color] duration-300 ease-out motion-safe:hover:scale-105 motion-safe:active:scale-90 motion-safe:active:shadow-sm ${animatingStep === nextDose.doseNumber ? 'bg-green-500 shadow-none' : `${THEMES[level].pillSolidBg} shadow-xl hover:shadow-2xl`} text-white focus-visible:outline-none ${THEMES[level].ring} ring-offset-4 ring-offset-transparent`}
-                      >
-                        <div className="flex -space-x-2">
-                          {animatingStep === nextDose.doseNumber ? (
-                            <Check className="w-10 h-10 motion-safe:animate-in zoom-in-50 duration-200" strokeWidth={3.5} aria-hidden="true" />
-                          ) : (
-                            Array.from({ length: nextDose.portions }).map((_, i) => (
-                              <Pill key={i} className="w-8 h-8" strokeWidth={2.5} aria-hidden="true" />
-                            ))
-                          )}
-                        </div>
-                      </button>
                     </div>
+                    
+                    <button
+                      onClick={() => completeStep(nextDose.doseNumber)}
+                      aria-label="Mark dose as complete"
+                      className={`w-20 h-20 rounded-full flex items-center justify-center transition-[transform,box-shadow] motion-safe:hover:scale-105 motion-safe:active:scale-95 shadow-lg ${THEMES[level].pillSolidBg} text-white focus-visible:outline-none ${THEMES[level].ring} ring-offset-4 ring-offset-transparent`}
+                    >
+                      <Check className="w-10 h-10" strokeWidth={3} aria-hidden="true" />
+                    </button>
                   </div>
+                  
+                  {animatingStep === nextDose.doseNumber && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="animate-ping absolute text-5xl">✨</div>
+                      <h2 className="text-3xl font-black animate-pulse text-zinc-900 dark:text-white">Logged!</h2>
+                    </div>
+                  )}
                 </div>
               )
             ) : (
-              <div className="p-8 rounded-[2rem] border-2 border-green-400 bg-green-50 dark:bg-green-900/20 text-center shadow-xl motion-safe:animate-in fade-in zoom-in-95 duration-500">
+              <div className="p-8 rounded-[2rem] border-2 border-green-400 bg-green-50 dark:bg-green-900/20 text-center shadow-xl animate-in fade-in zoom-in-95 duration-500">
                 <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/40 text-green-500 rounded-full flex items-center justify-center mb-6">
                   <Check className="w-10 h-10" strokeWidth={3} aria-hidden="true" />
                 </div>
-                <h2 className="text-3xl font-black text-green-700 dark:text-green-300 mb-2 text-balance">All Done!</h2>
-                <p className="text-green-600 dark:text-green-400 font-medium mb-8">Great job adhering to your schedule today.</p>
-                <button
-                  onClick={handleReset}
-                  className="w-full py-4 rounded-2xl font-black text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition-[transform,colors] shadow-lg hover:shadow-xl motion-safe:active:scale-95 text-lg"
-                >
-                  Start New Schedule
-                </button>
+                <h2 className="text-3xl font-black text-green-700 dark:text-green-300 mb-2">All Done!</h2>
+                <p className="text-green-600 dark:text-green-400 font-medium">Great job adhering to your schedule today.</p>
               </div>
             )}
           </section>
         )}
 
-        {isStarted && showFullSchedule && (
-          <section className="pt-6 border-t-2 border-zinc-100 dark:border-zinc-800/50 motion-safe:animate-in fade-in duration-500">
-            <div className="relative motion-safe:animate-in slide-in-from-top-4 fade-in duration-300">
-              <div className="absolute left-[31px] top-8 bottom-8 w-1 bg-zinc-100 dark:bg-zinc-800 rounded-full" aria-hidden="true"></div>
+        {isStarted && (
+          <section className="pt-6 border-t-2 border-zinc-100 dark:border-zinc-800/50 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between mb-8">
+              <button
+                onClick={() => setShowFullSchedule(!showFullSchedule)}
+                className="flex items-center gap-2 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:underline rounded-lg"
+              >
+                {showFullSchedule ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+                {showFullSchedule ? "Hide Timeline" : "Show Timeline"}
+              </button>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  onClick={toggleNotifications}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:active:scale-95 ${
+                    notificationsEnabled
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                  }`}
+                >
+                  {notificationsEnabled ? <BellRing className="w-3.5 h-3.5" aria-hidden="true" /> : <Bell className="w-3.5 h-3.5" aria-hidden="true" />}
+                  {notificationsEnabled ? "Notifs On" : "Notifs Off"}
+                </button>
+                {schedule.length > 0 && (
+                  <span className="text-xs font-black px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 tabular-nums">
+                    {completedPortions} / {totalPortions}&nbsp;Pills
+                  </span>
+                )}
+                <button
+                  onClick={handleReset}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 motion-safe:active:scale-95"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {showFullSchedule && (
+              <div className="relative animate-in slide-in-from-top-4 fade-in duration-300">
+                <div className="absolute left-[31px] top-8 bottom-8 w-1 bg-zinc-100 dark:bg-zinc-800 rounded-full" aria-hidden="true"></div>
 
                 <div className="space-y-8 relative" role="list">
                   {schedule.map((dose) => {
@@ -582,7 +593,7 @@ function AppContent() {
                     return (
                       <div key={dose.doseNumber} className="flex items-center gap-6 group relative" role="listitem">
                         <div
-                          className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-[background-color,border-color,color,fill,stroke,opacity,box-shadow,transform] duration-300 ${
+                          className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
                             isCompleted
                               ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500"
                               : isNext
@@ -632,7 +643,8 @@ function AppContent() {
                     );
                   })}
                 </div>
-            </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -646,60 +658,7 @@ function AppContent() {
             For tracking purposes only. Always follow medical advice.
           </p>
         </div>
-        </main>
-
-        {isStarted && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none flex justify-center motion-safe:animate-in slide-in-from-bottom-8 duration-500">
-            <div className="pointer-events-auto flex items-center gap-1 sm:gap-2 p-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50">
-              <button
-                onClick={() => setShowFullSchedule(!showFullSchedule)}
-                aria-pressed={showFullSchedule}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 motion-safe:active:scale-95 ${
-                  showFullSchedule
-                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                {showFullSchedule ? <EyeOff className="w-6 h-6 mb-1" aria-hidden="true" /> : <Eye className="w-6 h-6 mb-1" aria-hidden="true" />}
-                <span className="text-[10px] font-bold">Timeline</span>
-              </button>
-              
-              <button
-                onClick={toggleNotifications}
-                aria-pressed={notificationsEnabled}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:active:scale-95 ${
-                  notificationsEnabled
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                {notificationsEnabled ? <BellRing className="w-6 h-6 mb-1" aria-hidden="true" /> : <Bell className="w-6 h-6 mb-1" aria-hidden="true" />}
-                <span className="text-[10px] font-bold">Notifs</span>
-              </button>
-
-              <button
-                onClick={handleUndo}
-                disabled={Object.keys(completedSteps).length === 0}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 motion-safe:active:scale-95 ${
-                  Object.keys(completedSteps).length > 0
-                    ? "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                    : "text-zinc-300 dark:text-zinc-700 opacity-50 cursor-not-allowed"
-                }`}
-              >
-                <Undo className="w-6 h-6 mb-1" aria-hidden="true" />
-                <span className="text-[10px] font-bold">Undo</span>
-              </button>
-
-              <button
-                onClick={handleReset}
-                className="flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 motion-safe:active:scale-95 text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                <RotateCcw className="w-6 h-6 mb-1" aria-hidden="true" />
-                <span className="text-[10px] font-bold">Reset</span>
-              </button>
-            </div>
-          </div>
-        )}
+      </main>
     </div>
   );
 }
