@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, CalendarDays, Target, RotateCcw } from "lucide-react";
+import { Clock, CalendarDays, Target, RotateCcw, Check, Eye, EyeOff, Pill } from "lucide-react";
 
 // Custom SVG Pokeball Icon (Now a PokéPill!)
 const PokeballIcon = ({
@@ -140,15 +140,25 @@ export default function Home() {
   const [level, setLevel] = useState<Level>("Charmander");
   const [startTime, setStartTime] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [animatingStep, setAnimatingStep] = useState<number | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const savedTime = localStorage.getItem("pokeMed_startTime");
     const savedLevel = localStorage.getItem("pokeMed_level") as Level | null;
+    const savedSteps = localStorage.getItem("pokeMed_completedSteps");
 
     if (savedTime && savedLevel) {
       setStartTime(savedTime);
       setLevel(savedLevel);
+    }
+    
+    if (savedSteps) {
+      try {
+        setCompletedSteps(JSON.parse(savedSteps));
+      } catch (e) {}
     }
   }, []);
 
@@ -159,18 +169,45 @@ export default function Home() {
     }
   }, [startTime, level, mounted]);
 
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("pokeMed_completedSteps", JSON.stringify(completedSteps));
+    }
+  }, [completedSteps, mounted]);
+
   const handleReset = () => {
     setStartTime("");
     setLevel("Charmander");
+    setCompletedSteps([]);
+    setShowCompleted(false);
     localStorage.removeItem("pokeMed_startTime");
     localStorage.removeItem("pokeMed_level");
+    localStorage.removeItem("pokeMed_completedSteps");
+  };
+
+  const completeStep = (step: number) => {
+    if (animatingStep !== null || completedSteps.includes(step)) return;
+    setAnimatingStep(step);
+
+    // Smooth CSS pop animation
+    setTimeout(() => {
+      setCompletedSteps((prev) => Array.from(new Set([...prev, step])));
+      setAnimatingStep(null);
+    }, 400); 
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    setStartTime(newTime);
+    if (newTime && !completedSteps.includes(1)) {
+      setTimeout(() => completeStep(1), 50);
+    }
   };
 
   const setNow = () => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, "0");
     const minutes = now.getMinutes().toString().padStart(2, "0");
-    setStartTime(`${hours}:${minutes}`);
+    handleTimeChange(`${hours}:${minutes}`);
   };
 
   // Derive schedule during render instead of using useEffect (Rule: rerender-derived-state-no-effect)
@@ -220,9 +257,29 @@ export default function Home() {
   })();
 
   const totalPortions = schedule.reduce((sum, dose) => sum + dose.portions, 0);
+  const completedPortions = schedule
+    .filter((dose) => completedSteps.includes(dose.doseNumber))
+    .reduce((sum, dose) => sum + dose.portions, 0);
 
   return (
     <div className="relative min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8 overflow-hidden">
+      {/* Global styles for custom animation */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes pokeball-wiggle {
+          0% { transform: rotate(0deg); }
+          15% { transform: rotate(-25deg); }
+          30% { transform: rotate(25deg); }
+          45% { transform: rotate(-15deg); }
+          60% { transform: rotate(15deg); }
+          75% { transform: rotate(0deg); }
+          100% { transform: rotate(0deg); }
+        }
+        .animate-pokeball-wiggle {
+          animation: pokeball-wiggle 1s ease-in-out infinite;
+          transform-origin: bottom center;
+        }
+      `}} />
+
       {/* Background ambient glow */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
@@ -311,7 +368,7 @@ export default function Home() {
                 autoComplete="off"
                 type="time"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => handleTimeChange(e.target.value)}
                 style={{ colorScheme: "dark" }}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:outline-none ${THEMES[level].ring.replace("focus:", "focus-visible:")} focus:border-transparent transition-all appearance-none outline-none`}
               />
@@ -327,15 +384,24 @@ export default function Home() {
 
         {/* Timeline */}
         <section className="pt-4">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <CalendarDays className="w-5 h-5" aria-hidden="true" />
               Schedule
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {completedSteps.length > 0 && (
+                <button
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors focus-visible:ring-2 outline-none bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 focus-visible:ring-zinc-500"
+                >
+                  {showCompleted ? <EyeOff className="w-3.5 h-3.5" aria-hidden="true" /> : <Eye className="w-3.5 h-3.5" aria-hidden="true" />}
+                  {showCompleted ? "Hide Done" : `Show Done (${completedSteps.length})`}
+                </button>
+              )}
               {schedule.length > 0 && (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                  Total: {totalPortions} / 6&nbsp;Pills
+                  {completedPortions} / {totalPortions}&nbsp;Pills
                 </span>
               )}
               <button
@@ -362,68 +428,86 @@ export default function Home() {
             </div>
           ) : (
             <div className="relative">
-              {/* Vertical line connecting the timeline items */}
-              <div className="absolute left-[27px] top-6 bottom-6 w-0.5 bg-zinc-200 dark:bg-zinc-800"></div>
+              {/* Continuous Vertical Line */}
+              <div className="absolute left-[27px] top-8 bottom-8 w-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full"></div>
 
-              <div className="space-y-6 relative">
-                {schedule.map((dose, idx) => (
-                  <div key={idx} className="flex gap-4 group">
-                    {/* Timeline Node */}
-                    <div
-                      className={`relative flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center font-bold z-10 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_15px_currentColor] ${THEMES[level].nodeBg} ${THEMES[level].activeBorder} ${THEMES[level].nodeText}`}
-                    >
-                      {dose.doseNumber}
-                    </div>
+              <div className="space-y-8 relative">
+                {schedule
+                  .filter((dose) => {
+                    if (showCompleted) return true;
+                    if (animatingStep === dose.doseNumber) return true;
+                    return !completedSteps.includes(dose.doseNumber);
+                  })
+                  .map((dose, idx) => {
+                    const isCompleted = completedSteps.includes(dose.doseNumber);
+                    const isAnimating = animatingStep === dose.doseNumber;
 
-                    {/* Content Card */}
-                    <div
-                      className={`flex-1 rounded-2xl bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-800/50 p-4 shadow-sm flex items-center justify-between transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-[color:currentColor] hover:!border-opacity-30 ${THEMES[level].headerIconText}`}
-                    >
-                      <div className="space-y-1 text-zinc-900 dark:text-zinc-100">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="text-lg font-bold tracking-tight"
-                            style={{ fontVariantNumeric: "tabular-nums" }}
-                          >
-                            {dose.timeLabel}
-                          </span>
-                          {dose.isNextDay && (
-                            <span
-                              className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${THEMES[level].badgeBg} ${THEMES[level].badgeText}`}
-                            >
-                              +1 Day
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                          <PokeballIcon
-                            className="w-3.5 h-3.5"
-                            aria-hidden="true"
-                          />
-                          {dose.portions}{" "}
-                          {dose.portions === 1 ? "Pill" : "Pills"}
-                        </div>
-                      </div>
-
-                      {/* Visual Portion Indicator */}
-                      <div className="flex gap-2.5">
-                        {Array.from({ length: dose.portions }).map(
-                          (_, pIdx) => (
-                            <div
-                              key={pIdx}
-                              className={`relative w-[22px] h-[52px] rounded-full border-[2.5px] overflow-hidden flex flex-col shadow-[0_0_10px_currentColor] transition-all duration-300 group-hover:scale-105 group-hover:rotate-[-5deg] ${THEMES[level].pillBorder}`}
-                            >
-                              <div
-                                className={`h-1/2 w-full ${THEMES[level].pillSolidBg} border-b-2 ${THEMES[level].pillBorder}`}
-                              ></div>
-                              <div className="h-1/2 w-full bg-zinc-50 dark:bg-zinc-800"></div>
+                    return (
+                      <div key={idx} className="flex items-center gap-6 group relative">
+                        {/* The Action Button (Timeline Node) */}
+                        <button
+                          onClick={() => completeStep(dose.doseNumber)}
+                          disabled={isCompleted || isAnimating}
+                          className={`relative z-10 flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ease-out focus:outline-none focus-visible:ring-4 ${THEMES[level].ring} ${
+                            isCompleted
+                              ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 cursor-default scale-95"
+                              : isAnimating
+                              ? `scale-110 ${THEMES[level].pillSolidBg} text-white shadow-lg`
+                              : `bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-500 hover:scale-105 shadow-sm cursor-pointer`
+                          }`}
+                          aria-label={`Complete dose ${dose.doseNumber}`}
+                        >
+                          {isCompleted || isAnimating ? (
+                            <Check
+                              className={`w-6 h-6 transition-transform duration-300 ${
+                                isAnimating ? "scale-110" : "scale-100"
+                              }`}
+                              strokeWidth={3}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center">
+                              <div className="flex -space-x-1">
+                                {Array.from({ length: dose.portions }).map((_, i) => (
+                                  <Pill
+                                    key={i}
+                                    className={`w-5 h-5 ${THEMES[level].headerIconText}`}
+                                    fill="currentColor"
+                                    fillOpacity={0.2}
+                                  />
+                                ))}
+                              </div>
                             </div>
-                          ),
-                        )}
+                          )}
+                        </button>
+
+                        {/* Minimal Content */}
+                        <div
+                          className={`flex flex-col transition-all duration-300 ${
+                            isCompleted ? "opacity-40 translate-x-2" : "opacity-100 translate-x-0"
+                          }`}
+                        >
+                          <div className="flex items-baseline gap-2">
+                            <span
+                              className={`text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 ${
+                                isCompleted ? "line-through" : ""
+                              }`}
+                              style={{ fontVariantNumeric: "tabular-nums" }}
+                            >
+                              {dose.timeLabel}
+                            </span>
+                            {dose.isNextDay && (
+                              <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-500">
+                                +1 Day
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            {dose.portions} {dose.portions === 1 ? "Pill" : "Pills"}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
               </div>
             </div>
           )}
