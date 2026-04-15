@@ -1,10 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, CalendarDays, Flame, RotateCcw } from "lucide-react";
+import { Clock, CalendarDays, Target, RotateCcw } from "lucide-react";
 
-// Custom SVG Pokeball Icon
-const PokeballIcon = ({ className, "aria-hidden": ariaHidden }: { className?: string; "aria-hidden"?: boolean | "true" | "false" }) => (
+// Custom SVG Pokeball Icon (Now a PokéPill!)
+const PokeballIcon = ({
+  className,
+  "aria-hidden": ariaHidden,
+}: {
+  className?: string;
+  "aria-hidden"?: boolean | "true" | "false";
+}) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -15,10 +21,14 @@ const PokeballIcon = ({ className, "aria-hidden": ariaHidden }: { className?: st
     className={className}
     aria-hidden={ariaHidden}
   >
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    <path d="M2.06 12H9" />
-    <path d="M15 12h6.94" />
+    <g transform="rotate(45 12 12)">
+      {/* Outer capsule shape */}
+      <rect x="7" y="3" width="10" height="18" rx="5" />
+      {/* Inner button */}
+      <circle cx="12" cy="12" r="2.5" />
+      {/* Left and right middle lines */}
+      <path d="M7 12h2.5 M14.5 12h2.5" />
+    </g>
   </svg>
 );
 
@@ -67,7 +77,7 @@ const THEMES: Record<
     badgeText: string;
     nodeBg: string;
     nodeText: string;
-    flames: number;
+    intensity: number;
   }
 > = {
   Charmander: {
@@ -86,7 +96,7 @@ const THEMES: Record<
     badgeText: "text-amber-700 dark:text-amber-300",
     nodeBg: "bg-amber-100 dark:bg-amber-900/30",
     nodeText: "text-amber-600 dark:text-amber-400",
-    flames: 1,
+    intensity: 1,
   },
   Charmeleon: {
     glowBg: "from-orange-500/20 via-orange-500/5 to-transparent",
@@ -104,7 +114,7 @@ const THEMES: Record<
     badgeText: "text-orange-700 dark:text-orange-300",
     nodeBg: "bg-orange-100 dark:bg-orange-900/30",
     nodeText: "text-orange-600 dark:text-orange-400",
-    flames: 2,
+    intensity: 2,
   },
   Charizard: {
     glowBg: "from-red-500/20 via-red-500/5 to-transparent",
@@ -122,7 +132,7 @@ const THEMES: Record<
     badgeText: "text-red-700 dark:text-red-300",
     nodeBg: "bg-red-100 dark:bg-red-900/30",
     nodeText: "text-red-600 dark:text-red-400",
-    flames: 3,
+    intensity: 3,
   },
 };
 
@@ -243,40 +253,39 @@ export default function Home() {
 
         {/* Level Selection */}
         <section className="space-y-3">
-          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2" id="level-label">
-            1. Select Level
-          </label>
-          <div className="grid gap-3" role="group" aria-labelledby="level-label">
+          <div
+            className="grid grid-cols-3 gap-3 sm:gap-4"
+            role="group"
+            aria-labelledby="level-label"
+          >
             {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 ${THEMES[l].ring} ${
+                className={`flex flex-col items-center justify-center p-4 sm:p-5 min-h-[120px] sm:min-h-[140px] rounded-2xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 ${THEMES[l].ring} ${
                   level === l
                     ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText} shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_currentColor]`
                     : `border-zinc-200 dark:border-zinc-800 ${THEMES[l].hoverBorder} bg-white dark:bg-zinc-900 shadow-sm hover:shadow-[0_0_15px_currentColor] hover:shadow-opacity-10`
                 }`}
               >
-                <div className="font-bold flex items-center gap-2">
-                  {l}
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: THEMES[l].flames }).map((_, i) => (
-                      <Flame
-                        key={i}
-                        aria-hidden="true"
-                        className={`w-4 h-4 ${
-                          level === l
-                            ? THEMES[l].headerIconText
-                            : "text-zinc-300 dark:text-zinc-700"
-                        }`}
-                      />
-                    ))}
-                  </div>
+                <div className="flex gap-0.5 mb-1.5">
+                  {Array.from({ length: THEMES[l].intensity }).map((_, i) => (
+                    <Target
+                      key={i}
+                      aria-hidden="true"
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                        level === l
+                          ? THEMES[l].headerIconText
+                          : "text-zinc-300 dark:text-zinc-700"
+                      }`}
+                    />
+                  ))}
                 </div>
-                <div className="text-xs opacity-70">
-                  {l === "Charmander" && "6x spaced"}
-                  {l === "Charmeleon" && "Varied sizes"}
-                  {l === "Charizard" && "Heavy spaced"}
+                <div className="font-bold text-sm sm:text-base mb-1">{l}</div>
+                <div className="text-xs opacity-80 leading-tight text-center">
+                  {l === "Charmander"}
+                  {l === "Charmeleon"}
+                  {l === "Charizard"}
                 </div>
               </button>
             ))}
@@ -285,8 +294,11 @@ export default function Home() {
 
         {/* Time Input */}
         <section className="space-y-3">
-          <label htmlFor="time-input" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-            2. First Intake Time
+          <label
+            htmlFor="time-input"
+            className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2"
+          >
+            First Intake Time
           </label>
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -301,7 +313,7 @@ export default function Home() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 style={{ colorScheme: "dark" }}
-                className={`w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:outline-none ${THEMES[level].ring.replace('focus:', 'focus-visible:')} focus:border-transparent transition-all appearance-none outline-none`}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:outline-none ${THEMES[level].ring.replace("focus:", "focus-visible:")} focus:border-transparent transition-all appearance-none outline-none`}
               />
             </div>
             <button
@@ -364,10 +376,15 @@ export default function Home() {
                     </div>
 
                     {/* Content Card */}
-                    <div className={`flex-1 rounded-2xl bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-800/50 p-4 shadow-sm flex items-center justify-between transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-[color:currentColor] hover:!border-opacity-30 ${THEMES[level].headerIconText}`}>
+                    <div
+                      className={`flex-1 rounded-2xl bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-800/50 p-4 shadow-sm flex items-center justify-between transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-[color:currentColor] hover:!border-opacity-30 ${THEMES[level].headerIconText}`}
+                    >
                       <div className="space-y-1 text-zinc-900 dark:text-zinc-100">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>
+                          <span
+                            className="text-lg font-bold tracking-tight"
+                            style={{ fontVariantNumeric: "tabular-nums" }}
+                          >
                             {dose.timeLabel}
                           </span>
                           {dose.isNextDay && (
@@ -379,7 +396,10 @@ export default function Home() {
                           )}
                         </div>
                         <div className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                          <PokeballIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                          <PokeballIcon
+                            className="w-3.5 h-3.5"
+                            aria-hidden="true"
+                          />
                           {dose.portions}{" "}
                           {dose.portions === 1 ? "Pill" : "Pills"}
                         </div>
