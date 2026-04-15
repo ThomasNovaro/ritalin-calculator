@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Clock, CalendarDays, Flame } from "lucide-react";
 
 // Custom SVG Pokeball Icon
@@ -128,11 +128,6 @@ const THEMES: Record<
 export default function Home() {
   const [level, setLevel] = useState<Level>("Charmander");
   const [startTime, setStartTime] = useState<string>("");
-  const [schedule, setSchedule] = useState<DoseInfo[]>([]);
-
-  useEffect(() => {
-    calculateSchedule(level, startTime);
-  }, [level, startTime]);
 
   const setNow = () => {
     const now = new Date();
@@ -141,18 +136,15 @@ export default function Home() {
     setStartTime(`${hours}:${minutes}`);
   };
 
-  const calculateSchedule = (selectedLevel: Level, timeStr: string) => {
-    if (!timeStr) {
-      setSchedule([]);
-      return;
-    }
+  // Derive schedule during render instead of using useEffect (Rule: rerender-derived-state-no-effect)
+  const schedule: DoseInfo[] = (() => {
+    if (!startTime) return [];
 
-    const [hoursStr, minutesStr] = timeStr.split(":");
+    const [hoursStr, minutesStr] = startTime.split(":");
     const startHours = parseInt(hoursStr, 10);
     const startMinutes = parseInt(minutesStr, 10);
 
     const now = new Date();
-    // Use today's date to establish a baseline
     const baseDate = new Date(
       now.getFullYear(),
       now.getMonth(),
@@ -162,41 +154,33 @@ export default function Home() {
       0,
     );
 
-    const protocol = PROTOCOLS[selectedLevel];
+    const protocol = PROTOCOLS[level];
     let cumulativeMinutes = 0;
 
-    const newSchedule: DoseInfo[] = protocol.gaps.map((gap, index) => {
+    const timeFormatter = new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    return protocol.gaps.map((gap, index) => {
       cumulativeMinutes += gap;
 
       const doseTime = new Date(baseDate.getTime() + cumulativeMinutes * 60000);
 
-      // Check for next day crossover
-      // This works even across month/year boundaries because it compares the absolute day offset
       const isNextDay =
         doseTime.getFullYear() > baseDate.getFullYear() ||
         doseTime.getMonth() > baseDate.getMonth() ||
         doseTime.getDate() > baseDate.getDate();
 
-      const formatOptions: Intl.DateTimeFormatOptions = {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      };
-
-      const timeLabel = new Intl.DateTimeFormat("en-US", formatOptions).format(
-        doseTime,
-      );
-
       return {
         doseNumber: index + 1,
-        timeLabel,
+        timeLabel: timeFormatter.format(doseTime),
         portions: protocol.portions[index],
         isNextDay,
       };
     });
-
-    setSchedule(newSchedule);
-  };
+  })();
 
   const totalPortions = schedule.reduce((sum, dose) => sum + dose.portions, 0);
 
