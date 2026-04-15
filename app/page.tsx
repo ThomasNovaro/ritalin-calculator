@@ -263,27 +263,10 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8 overflow-hidden">
-      {/* Global styles for custom animation */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pokeball-wiggle {
-          0% { transform: rotate(0deg); }
-          15% { transform: rotate(-25deg); }
-          30% { transform: rotate(25deg); }
-          45% { transform: rotate(-15deg); }
-          60% { transform: rotate(15deg); }
-          75% { transform: rotate(0deg); }
-          100% { transform: rotate(0deg); }
-        }
-        .animate-pokeball-wiggle {
-          animation: pokeball-wiggle 1s ease-in-out infinite;
-          transform-origin: bottom center;
-        }
-      `}} />
-
-      {/* Background ambient glow */}
+      {/* Background ambient glow - hardware accelerated and using CSS radial gradient instead of heavy blur */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className={`absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial ${THEMES[level].glowBg} opacity-60 blur-[100px] rounded-full transition-colors duration-700`}
+          className={`absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] ${THEMES[level].glowBg} opacity-60 rounded-full transition-colors duration-700 transform-gpu`}
         />
       </div>
 
@@ -319,7 +302,7 @@ export default function Home() {
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex flex-col items-center justify-center p-4 sm:p-5 min-h-[120px] sm:min-h-[140px] rounded-2xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 ${THEMES[l].ring} ${
+                className={`flex flex-col items-center justify-center p-4 sm:p-5 min-h-[120px] sm:min-h-[140px] rounded-2xl border-2 transition-all duration-300 transform transform-gpu hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 ${THEMES[l].ring} ${
                   level === l
                     ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText} shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_currentColor]`
                     : `border-zinc-200 dark:border-zinc-800 ${THEMES[l].hoverBorder} bg-white dark:bg-zinc-900 shadow-sm hover:shadow-[0_0_15px_currentColor] hover:shadow-opacity-10`
@@ -448,7 +431,7 @@ export default function Home() {
                         <button
                           onClick={() => completeStep(dose.doseNumber)}
                           disabled={isCompleted || isAnimating}
-                          className={`relative z-10 flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ease-out focus:outline-none focus-visible:ring-4 ${THEMES[level].ring} ${
+                          className={`relative z-10 flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ease-out focus:outline-none focus-visible:ring-4 transform-gpu ${THEMES[level].ring} ${
                             isCompleted
                               ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 cursor-default scale-95"
                               : isAnimating
@@ -459,7 +442,7 @@ export default function Home() {
                         >
                           {isCompleted || isAnimating ? (
                             <Check
-                              className={`w-6 h-6 transition-transform duration-300 ${
+                              className={`w-6 h-6 transition-transform duration-300 transform-gpu ${
                                 isAnimating ? "scale-110" : "scale-100"
                               }`}
                               strokeWidth={3}
@@ -482,7 +465,7 @@ export default function Home() {
 
                         {/* Minimal Content */}
                         <div
-                          className={`flex flex-col transition-all duration-300 ${
+                          className={`flex flex-col transition-all duration-300 transform-gpu ${
                             isCompleted ? "opacity-40 translate-x-2" : "opacity-100 translate-x-0"
                           }`}
                         >
