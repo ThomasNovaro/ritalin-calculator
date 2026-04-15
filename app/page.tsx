@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, CalendarDays } from "lucide-react";
+import { Clock, CalendarDays, Flame } from "lucide-react";
 
 // Custom SVG Pokeball Icon
 const PokeballIcon = ({ className }: { className?: string }) => (
@@ -51,6 +51,7 @@ const PROTOCOLS: Record<Level, { gaps: number[]; portions: number[] }> = {
 const THEMES: Record<
   Level,
   {
+    glowBg: string;
     headerIconText: string;
     headerIconBg: string;
     activeBorder: string;
@@ -59,12 +60,17 @@ const THEMES: Record<
     hoverBorder: string;
     ring: string;
     pillBg: string;
+    pillSolidBg: string;
     pillBorder: string;
     badgeBg: string;
     badgeText: string;
+    nodeBg: string;
+    nodeText: string;
+    flames: number;
   }
 > = {
   Charmander: {
+    glowBg: "from-amber-500/20 via-amber-500/5 to-transparent",
     headerIconText: "text-amber-500 dark:text-amber-400",
     headerIconBg: "bg-amber-100 dark:bg-amber-900/30",
     activeBorder: "border-amber-500",
@@ -73,11 +79,16 @@ const THEMES: Record<
     hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700/50",
     ring: "focus:ring-amber-500",
     pillBg: "bg-amber-500/20",
+    pillSolidBg: "bg-amber-500 dark:bg-amber-400",
     pillBorder: "border-amber-500",
     badgeBg: "bg-amber-100 dark:bg-amber-900/40",
     badgeText: "text-amber-700 dark:text-amber-300",
+    nodeBg: "bg-amber-100 dark:bg-amber-900/30",
+    nodeText: "text-amber-600 dark:text-amber-400",
+    flames: 1,
   },
   Charmeleon: {
+    glowBg: "from-orange-500/20 via-orange-500/5 to-transparent",
     headerIconText: "text-orange-500 dark:text-orange-400",
     headerIconBg: "bg-orange-100 dark:bg-orange-900/30",
     activeBorder: "border-orange-500",
@@ -86,11 +97,16 @@ const THEMES: Record<
     hoverBorder: "hover:border-orange-300 dark:hover:border-orange-700/50",
     ring: "focus:ring-orange-500",
     pillBg: "bg-orange-500/20",
+    pillSolidBg: "bg-orange-500 dark:bg-orange-400",
     pillBorder: "border-orange-500",
     badgeBg: "bg-orange-100 dark:bg-orange-900/40",
     badgeText: "text-orange-700 dark:text-orange-300",
+    nodeBg: "bg-orange-100 dark:bg-orange-900/30",
+    nodeText: "text-orange-600 dark:text-orange-400",
+    flames: 2,
   },
   Charizard: {
+    glowBg: "from-red-500/20 via-red-500/5 to-transparent",
     headerIconText: "text-red-500 dark:text-red-400",
     headerIconBg: "bg-red-100 dark:bg-red-900/30",
     activeBorder: "border-red-500",
@@ -99,9 +115,13 @@ const THEMES: Record<
     hoverBorder: "hover:border-red-300 dark:hover:border-red-700/50",
     ring: "focus:ring-red-500",
     pillBg: "bg-red-500/20",
+    pillSolidBg: "bg-red-500 dark:bg-red-400",
     pillBorder: "border-red-500",
     badgeBg: "bg-red-100 dark:bg-red-900/40",
     badgeText: "text-red-700 dark:text-red-300",
+    nodeBg: "bg-red-100 dark:bg-red-900/30",
+    nodeText: "text-red-600 dark:text-red-400",
+    flames: 3,
   },
 };
 
@@ -181,8 +201,15 @@ export default function Home() {
   const totalPortions = schedule.reduce((sum, dose) => sum + dose.portions, 0);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8">
-      <main className="max-w-md mx-auto space-y-8">
+    <div className="relative min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8 overflow-hidden">
+      {/* Background ambient glow */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div
+          className={`absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial ${THEMES[level].glowBg} opacity-60 blur-[100px] rounded-full transition-colors duration-700`}
+        />
+      </div>
+
+      <main className="relative z-10 max-w-md mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-2 mt-4">
           <div className="flex justify-center mb-4">
@@ -212,13 +239,27 @@ export default function Home() {
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg ${
                   level === l
-                    ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText}`
-                    : `border-zinc-200 dark:border-zinc-800 ${THEMES[l].hoverBorder} bg-white dark:bg-zinc-900`
+                    ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText} shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_currentColor]`
+                    : `border-zinc-200 dark:border-zinc-800 ${THEMES[l].hoverBorder} bg-white dark:bg-zinc-900 shadow-sm hover:shadow-[0_0_15px_currentColor] hover:shadow-opacity-10`
                 }`}
               >
-                <div className="font-medium">{l}</div>
+                <div className="font-bold flex items-center gap-2">
+                  {l}
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: THEMES[l].flames }).map((_, i) => (
+                      <Flame
+                        key={i}
+                        className={`w-4 h-4 ${
+                          level === l
+                            ? THEMES[l].headerIconText
+                            : "text-zinc-300 dark:text-zinc-700"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <div className="text-xs opacity-70">
                   {l === "Charmander" && "6x spaced"}
                   {l === "Charmeleon" && "Varied sizes"}
@@ -283,15 +324,17 @@ export default function Home() {
 
               <div className="space-y-6 relative">
                 {schedule.map((dose, idx) => (
-                  <div key={idx} className="flex gap-4">
+                  <div key={idx} className="flex gap-4 group">
                     {/* Timeline Node */}
-                    <div className="relative flex-shrink-0 w-14 h-14 rounded-full bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 flex items-center justify-center font-bold text-zinc-400 z-10 shadow-sm">
+                    <div
+                      className={`relative flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center font-bold z-10 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_15px_currentColor] ${THEMES[level].nodeBg} ${THEMES[level].activeBorder} ${THEMES[level].nodeText}`}
+                    >
                       {dose.doseNumber}
                     </div>
 
                     {/* Content Card */}
-                    <div className="flex-1 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm flex items-center justify-between">
-                      <div className="space-y-1">
+                    <div className={`flex-1 rounded-2xl bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-800/50 p-4 shadow-sm flex items-center justify-between transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-[color:currentColor] hover:!border-opacity-30 ${THEMES[level].headerIconText}`}>
+                      <div className="space-y-1 text-zinc-900 dark:text-zinc-100">
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold tracking-tight">
                             {dose.timeLabel}
@@ -312,16 +355,17 @@ export default function Home() {
                       </div>
 
                       {/* Visual Portion Indicator */}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2.5">
                         {Array.from({ length: dose.portions }).map(
                           (_, pIdx) => (
                             <div
                               key={pIdx}
-                              className={`relative w-4 h-8 rounded-full border-2 overflow-hidden flex flex-col ${THEMES[level].pillBg} ${THEMES[level].pillBorder}`}
+                              className={`relative w-[22px] h-[52px] rounded-full border-[2.5px] overflow-hidden flex flex-col shadow-[0_0_10px_currentColor] transition-all duration-300 group-hover:scale-105 group-hover:rotate-[-5deg] ${THEMES[level].pillBorder}`}
                             >
                               <div
-                                className={`absolute top-1/2 left-0 w-full border-t-2 opacity-50 ${THEMES[level].pillBorder}`}
+                                className={`h-1/2 w-full ${THEMES[level].pillSolidBg} border-b-2 ${THEMES[level].pillBorder}`}
                               ></div>
+                              <div className="h-1/2 w-full bg-zinc-50 dark:bg-zinc-800"></div>
                             </div>
                           ),
                         )}
