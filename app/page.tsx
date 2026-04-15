@@ -321,24 +321,24 @@ export default function Home() {
               Schedule
             </h2>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleReset}
-                disabled={schedule.length === 0}
-                className={`p-1.5 rounded-lg transition-colors focus-visible:ring-2 outline-none ${
-                  schedule.length === 0
-                    ? "text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
-                    : "text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 focus-visible:ring-red-500"
-                }`}
-                aria-label="Reset schedule"
-                title="Reset schedule"
-              >
-                <RotateCcw className="w-4 h-4" aria-hidden="true" />
-              </button>
               {schedule.length > 0 && (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                   Total: {totalPortions} / 6&nbsp;Pills
                 </span>
               )}
+              <button
+                onClick={handleReset}
+                disabled={schedule.length === 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors focus-visible:ring-2 outline-none ${
+                  schedule.length === 0
+                    ? "bg-zinc-100 dark:bg-zinc-800/50 text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
+                    : "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 focus-visible:ring-red-500"
+                }`}
+                aria-label="Reset schedule"
+              >
+                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                Reset
+              </button>
             </div>
           </div>
 
