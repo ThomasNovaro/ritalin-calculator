@@ -16,7 +16,6 @@ export const viewport: Viewport = {
   themeColor: "#050505",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // Note: usually an anti-pattern, but often used for iOS web apps to feel native. Vercel guidelines say to avoid it though, so I'll remove it.
 };
 
 export const metadata: Metadata = {
