@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, CalendarDays, Flame } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Clock, CalendarDays, Flame, RotateCcw } from "lucide-react";
 
 // Custom SVG Pokeball Icon
-const PokeballIcon = ({ className }: { className?: string }) => (
+const PokeballIcon = ({ className, "aria-hidden": ariaHidden }: { className?: string; "aria-hidden"?: boolean | "true" | "false" }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -13,6 +13,7 @@ const PokeballIcon = ({ className }: { className?: string }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     className={className}
+    aria-hidden={ariaHidden}
   >
     <circle cx="12" cy="12" r="10" />
     <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
@@ -128,6 +129,32 @@ const THEMES: Record<
 export default function Home() {
   const [level, setLevel] = useState<Level>("Charmander");
   const [startTime, setStartTime] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const savedTime = localStorage.getItem("pokeMed_startTime");
+    const savedLevel = localStorage.getItem("pokeMed_level") as Level | null;
+
+    if (savedTime && savedLevel) {
+      setStartTime(savedTime);
+      setLevel(savedLevel);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mounted && startTime) {
+      localStorage.setItem("pokeMed_startTime", startTime);
+      localStorage.setItem("pokeMed_level", level);
+    }
+  }, [startTime, level, mounted]);
+
+  const handleReset = () => {
+    setStartTime("");
+    setLevel("Charmander");
+    localStorage.removeItem("pokeMed_startTime");
+    localStorage.removeItem("pokeMed_level");
+  };
 
   const setNow = () => {
     const now = new Date();
@@ -138,7 +165,7 @@ export default function Home() {
 
   // Derive schedule during render instead of using useEffect (Rule: rerender-derived-state-no-effect)
   const schedule: DoseInfo[] = (() => {
-    if (!startTime) return [];
+    if (!mounted || !startTime) return [];
 
     const [hoursStr, minutesStr] = startTime.split(":");
     const startHours = parseInt(hoursStr, 10);
@@ -202,6 +229,7 @@ export default function Home() {
             >
               <PokeballIcon
                 className={`w-8 h-8 transition-colors ${THEMES[level].headerIconText}`}
+                aria-hidden="true"
               />
             </div>
           </div>
@@ -215,15 +243,15 @@ export default function Home() {
 
         {/* Level Selection */}
         <section className="space-y-3">
-          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2" id="level-label">
             1. Select Level
           </label>
-          <div className="grid gap-3">
+          <div className="grid gap-3" role="group" aria-labelledby="level-label">
             {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg ${
+                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 ${THEMES[l].ring} ${
                   level === l
                     ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText} shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_15px_currentColor]`
                     : `border-zinc-200 dark:border-zinc-800 ${THEMES[l].hoverBorder} bg-white dark:bg-zinc-900 shadow-sm hover:shadow-[0_0_15px_currentColor] hover:shadow-opacity-10`
@@ -235,6 +263,7 @@ export default function Home() {
                     {Array.from({ length: THEMES[l].flames }).map((_, i) => (
                       <Flame
                         key={i}
+                        aria-hidden="true"
                         className={`w-4 h-4 ${
                           level === l
                             ? THEMES[l].headerIconText
@@ -256,25 +285,28 @@ export default function Home() {
 
         {/* Time Input */}
         <section className="space-y-3">
-          <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+          <label htmlFor="time-input" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
             2. First Intake Time
           </label>
           <div className="flex gap-3">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-400">
-                <Clock className="w-5 h-5" />
+                <Clock className="w-5 h-5" aria-hidden="true" />
               </div>
               <input
+                id="time-input"
+                name="startTime"
+                autoComplete="off"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 style={{ colorScheme: "dark" }}
-                className={`w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:ring-2 ${THEMES[level].ring} focus:border-transparent outline-none transition-all appearance-none`}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-visible:ring-2 focus-visible:outline-none ${THEMES[level].ring.replace('focus:', 'focus-visible:')} focus:border-transparent transition-all appearance-none outline-none`}
               />
             </div>
             <button
               onClick={setNow}
-              className="px-6 py-3 font-medium rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="px-6 py-3 font-medium rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-opacity whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
             >
               Now
             </button>
@@ -285,14 +317,29 @@ export default function Home() {
         <section className="pt-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
+              <CalendarDays className="w-5 h-5" aria-hidden="true" />
               Schedule
             </h2>
-            {schedule.length > 0 && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                Total: {totalPortions} / 6 Pills
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleReset}
+                disabled={schedule.length === 0}
+                className={`p-1.5 rounded-lg transition-colors focus-visible:ring-2 outline-none ${
+                  schedule.length === 0
+                    ? "text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
+                    : "text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 focus-visible:ring-red-500"
+                }`}
+                aria-label="Reset schedule"
+                title="Reset schedule"
+              >
+                <RotateCcw className="w-4 h-4" aria-hidden="true" />
+              </button>
+              {schedule.length > 0 && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                  Total: {totalPortions} / 6&nbsp;Pills
+                </span>
+              )}
+            </div>
           </div>
 
           {schedule.length === 0 ? (
@@ -320,7 +367,7 @@ export default function Home() {
                     <div className={`flex-1 rounded-2xl bg-white dark:bg-[#111] border-2 border-zinc-200 dark:border-zinc-800/50 p-4 shadow-sm flex items-center justify-between transition-all duration-300 transform group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-[color:currentColor] hover:!border-opacity-30 ${THEMES[level].headerIconText}`}>
                       <div className="space-y-1 text-zinc-900 dark:text-zinc-100">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold tracking-tight">
+                          <span className="text-lg font-bold tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>
                             {dose.timeLabel}
                           </span>
                           {dose.isNextDay && (
@@ -332,7 +379,7 @@ export default function Home() {
                           )}
                         </div>
                         <div className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                          <PokeballIcon className="w-3.5 h-3.5" />
+                          <PokeballIcon className="w-3.5 h-3.5" aria-hidden="true" />
                           {dose.portions}{" "}
                           {dose.portions === 1 ? "Pill" : "Pills"}
                         </div>
@@ -365,8 +412,7 @@ export default function Home() {
         {/* Footer info/disclaimer */}
         <div className="text-center pt-8 pb-12">
           <p className="text-xs text-zinc-400">
-            For tracking purposes only. Always follow medical advice. App resets
-            upon refresh.
+            For tracking purposes only. Always follow medical advice.
           </p>
         </div>
       </main>
