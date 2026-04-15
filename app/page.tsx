@@ -127,7 +127,7 @@ function AppContent() {
   // Key: doseNumber, Value: actual timestamp when taken
   const [completedSteps, setCompletedSteps] = useState<Record<number, number>>({});
   const [animatingStep, setAnimatingStep] = useState<number | null>(null);
-  const [showFullSchedule, setShowFullSchedule] = useState(false);
+  const [showFullSchedule, setShowFullSchedule] = useState(true);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
@@ -199,10 +199,15 @@ function AppContent() {
   }, [completedSteps, mounted]);
 
   const handleReset = () => {
+    if (Object.keys(completedSteps).length > 0) {
+      if (!confirm("Are you sure you want to reset your entire schedule? This action cannot be undone.")) {
+        return;
+      }
+    }
     setStartTime("");
     setLevel("Charmander");
     setCompletedSteps({});
-    setShowFullSchedule(false);
+    setShowFullSchedule(true);
     localStorage.removeItem("pokeMed_startTime");
     localStorage.removeItem("pokeMed_level");
     localStorage.removeItem("pokeMed_completedSteps_v2");
@@ -256,11 +261,17 @@ function AppContent() {
     if (Notification.permission === "granted") {
       setNotificationsEnabled(true);
       localStorage.setItem("pokeMed_notifications", "true");
+      new Notification("Notifications Enabled!", {
+        body: "You will be notified when it's time for your next dose.",
+      });
     } else if (Notification.permission !== "denied") {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
         localStorage.setItem("pokeMed_notifications", "true");
+        new Notification("Notifications Enabled!", {
+          body: "You will be notified when it's time for your next dose.",
+        });
       }
     }
   };
@@ -498,36 +509,47 @@ function AppContent() {
 
         {isStarted && schedule.length > 0 && (
           <section className="pt-2 animate-in fade-in zoom-in-95 duration-500" aria-live="polite">
+            <div className="flex justify-center mb-6">
+              <span className={`text-sm font-black px-4 py-2 rounded-2xl ${THEMES[level].activeBg} ${THEMES[level].activeText} border-2 ${THEMES[level].activeBorder} tabular-nums shadow-sm`}>
+                {completedPortions} / {totalPortions} Pills Taken Today
+              </span>
+            </div>
             {!isAllComplete ? (
               nextDose && (
                 <div className={`relative overflow-hidden p-6 sm:p-8 rounded-[2rem] border-2 ${THEMES[level].activeBorder} ${THEMES[level].activeBg} shadow-xl transition-colors duration-500`}>
-                  <div className={`flex items-center justify-between transition-[transform,opacity] duration-500 ${animatingStep === nextDose.doseNumber ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}>
+                  <div className={`flex items-center justify-between transition-[transform,opacity] duration-500 ${animatingStep === nextDose.doseNumber ? '-translate-x-full opacity-0 scale-95' : 'translate-x-0 opacity-100 scale-100'}`}>
                     <div>
                       <p className={`text-sm font-black uppercase tracking-widest mb-1 ${THEMES[level].headerIconText}`}>
-                        Step {nextDose.doseNumber}
+                        Next Dose
                       </p>
-                      <h2 className="text-5xl font-black tracking-tight mb-3 tabular-nums">
+                      <h2 className="text-5xl font-black tracking-tight mb-1 tabular-nums">
                         {nextDose.timeLabel}
                       </h2>
-                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-bold bg-white/50 dark:bg-black/20 w-fit px-3 py-1.5 rounded-xl">
-                        <Pill className="w-4 h-4" aria-hidden="true" />
-                        {nextDose.portions}&nbsp;{nextDose.portions === 1 ? "Pill" : "Pills"}
-                      </div>
                     </div>
                     
                     <button
                       onClick={() => completeStep(nextDose.doseNumber)}
                       aria-label="Mark dose as complete"
-                      className={`w-20 h-20 rounded-full flex items-center justify-center transition-[transform,box-shadow] motion-safe:hover:scale-105 motion-safe:active:scale-95 shadow-lg ${THEMES[level].pillSolidBg} text-white focus-visible:outline-none ${THEMES[level].ring} ring-offset-4 ring-offset-transparent`}
+                      className={`w-20 h-20 rounded-full flex flex-col items-center justify-center transition-[transform,box-shadow] motion-safe:hover:scale-105 motion-safe:active:scale-95 shadow-lg ${THEMES[level].pillSolidBg} text-white focus-visible:outline-none ${THEMES[level].ring} ring-offset-4 ring-offset-transparent`}
                     >
-                      <Check className="w-10 h-10" strokeWidth={3} aria-hidden="true" />
+                      <div className="flex gap-1">
+                        {Array.from({ length: nextDose.portions }).map((_, i) => (
+                          <Pill key={i} className={nextDose.portions === 1 ? "w-8 h-8" : "w-6 h-6"} aria-hidden="true" />
+                        ))}
+                      </div>
                     </button>
                   </div>
                   
                   {animatingStep === nextDose.doseNumber && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="animate-ping absolute text-5xl">✨</div>
-                      <h2 className="text-3xl font-black animate-pulse text-zinc-900 dark:text-white">Logged!</h2>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md z-20 animate-in fade-in duration-500">
+                      <div className="flex flex-col items-center animate-in zoom-in-90 slide-in-from-bottom-2 fade-in duration-500 ease-out fill-mode-forwards">
+                        <div className="w-14 h-14 mb-3 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                          <Check className="w-7 h-7" strokeWidth={4} aria-hidden="true" />
+                        </div>
+                        <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
+                          Logged!
+                        </h2>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -566,11 +588,6 @@ function AppContent() {
                   {notificationsEnabled ? <BellRing className="w-3.5 h-3.5" aria-hidden="true" /> : <Bell className="w-3.5 h-3.5" aria-hidden="true" />}
                   {notificationsEnabled ? "Notifs On" : "Notifs Off"}
                 </button>
-                {schedule.length > 0 && (
-                  <span className="text-xs font-black px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 tabular-nums">
-                    {completedPortions} / {totalPortions}&nbsp;Pills
-                  </span>
-                )}
                 <button
                   onClick={handleReset}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 motion-safe:active:scale-95"
