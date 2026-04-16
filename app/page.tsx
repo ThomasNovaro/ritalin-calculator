@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Clock, RotateCcw, Check, Zap, AlertCircle, Undo, Sun, Moon } from "lucide-react";
+import {
+  RotateCcw,
+  Power,
+  Zap,
+  AlertCircle,
+  Undo,
+} from "lucide-react";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -14,33 +20,45 @@ interface DoseInfo {
   actualTimeMs: number;
 }
 
-const PROTOCOLS: Record<Level, { maxDoses: number; portions: number[] }> = {
-  Charmander: { maxDoses: 6, portions: [1, 1, 1, 1, 1, 1] },
-  Charmeleon: { maxDoses: 4, portions: [1, 2, 2, 1] },
-  Charizard: { maxDoses: 3, portions: [2, 2, 2] },
+const PROTOCOLS: Record<
+  Level,
+  { maxDoses: number; portions: number[]; jp: string }
+> = {
+  Charmander: { maxDoses: 6, portions: [1, 1, 1, 1, 1, 1], jp: "ヒトカゲ" },
+  Charmeleon: { maxDoses: 4, portions: [1, 2, 2, 1], jp: "リザード" },
+  Charizard: { maxDoses: 3, portions: [2, 2, 2], jp: "リザードン" },
 };
 
-const THEMES: Record<Level, { color: string; bgClass: string; textClass: string; borderClass: string; fillClass: string }> = {
+const THEMES: Record<
+  Level,
+  {
+    color: string;
+    bgClass: string;
+    textClass: string;
+    borderClass: string;
+    fillClass: string;
+  }
+> = {
   Charmander: {
-    color: "#FACC15",
-    bgClass: "bg-[#FACC15]",
-    textClass: "text-[#FACC15]",
-    borderClass: "border-[#FACC15]",
-    fillClass: "bg-[#FACC15]",
+    color: "#1aa167",
+    bgClass: "bg-[#1aa167]",
+    textClass: "text-[#1aa167]",
+    borderClass: "border-[#1aa167]",
+    fillClass: "bg-[#1aa167]",
   },
   Charmeleon: {
-    color: "#FF5E0E",
-    bgClass: "bg-[#FF5E0E]",
-    textClass: "text-[#FF5E0E]",
-    borderClass: "border-[#FF5E0E]",
-    fillClass: "bg-[#FF5E0E]",
+    color: "#1270b8",
+    bgClass: "bg-[#1270b8]",
+    textClass: "text-[#1270b8]",
+    borderClass: "border-[#1270b8]",
+    fillClass: "bg-[#1270b8]",
   },
   Charizard: {
-    color: "#E63946",
-    bgClass: "bg-[#E63946]",
-    textClass: "text-[#E63946]",
-    borderClass: "border-[#E63946]",
-    fillClass: "bg-[#E63946]",
+    color: "#ce2021",
+    bgClass: "bg-[#ce2021]",
+    textClass: "text-[#ce2021]",
+    borderClass: "border-[#ce2021]",
+    fillClass: "bg-[#ce2021]",
   },
 };
 
@@ -51,14 +69,14 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 // -- Custom Hold Button --
-function HoldButton({ 
-  onComplete, 
-  theme, 
-  label = "HOLD TO CONSUME",
-  disabled = false
-}: { 
-  onComplete: () => void; 
-  theme: typeof THEMES[Level]; 
+function HoldButton({
+  onComplete,
+  theme,
+  label = "hold to consume",
+  disabled = false,
+}: {
+  onComplete: () => void;
+  theme: (typeof THEMES)[Level];
   label?: string;
   disabled?: boolean;
 }) {
@@ -71,7 +89,7 @@ function HoldButton({
     if (disabled || completed) return;
     setHolding(true);
     if (navigator.vibrate) navigator.vibrate(50);
-    
+
     timerRef.current = setTimeout(() => {
       setHolding(false);
       setCompleted(true);
@@ -95,9 +113,12 @@ function HoldButton({
       onPointerLeave={handleEnd}
       onPointerCancel={handleEnd}
       disabled={disabled}
-      className={`relative w-full h-24 border-[3px] border-border-theme overflow-hidden flex items-center justify-center uppercase tracking-widest text-lg font-bold transition-all ${
-        disabled ? 'opacity-50 cursor-not-allowed bg-surface text-subtext shadow-none' : 
-        completed ? 'bg-foreground text-background shadow-[4px_4px_0px_0px_var(--color-border-theme)]' : 'bg-background text-foreground hover:bg-surface shadow-[6px_6px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[6px] active:translate-y-[6px]'
+      className={`relative w-full h-24 border border-border-theme overflow-hidden flex items-center justify-center tracking-wide text-base transition-all duration-100 ease-in-out ${
+        disabled
+          ? "opacity-50 cursor-not-allowed bg-surface text-disabled"
+          : completed
+            ? "bg-foreground text-background"
+            : "bg-background text-foreground hover:bg-surface"
       }`}
       style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
     >
@@ -107,13 +128,15 @@ function HoldButton({
           style={{
             width: holding ? "100%" : "0%",
             transitionProperty: "width",
-            transitionDuration: holding ? "1500ms" : "300ms",
+            transitionDuration: holding ? "1500ms" : "100ms",
             transitionTimingFunction: holding ? "linear" : "ease-out",
           }}
         />
       )}
-      <span className={`relative z-10 ${holding ? 'text-black' : ''} transition-colors duration-100`}>
-        {completed ? "DOSE LOGGED" : holding ? "HOLDING..." : label}
+      <span
+        className={`relative z-10 ${holding ? "text-white font-semibold" : ""} transition-colors duration-100`}
+      >
+        {completed ? "dose logged" : holding ? "holding..." : label}
       </span>
     </button>
   );
@@ -130,55 +153,28 @@ function AppContent() {
   const [level, setLevelState] = useState<Level>(urlLevel);
   const [startTime, setStartTimeState] = useState<string>(urlTime);
   const [mounted, setMounted] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Record<number, number>>({});
+  const [completedSteps, setCompletedSteps] = useState<Record<number, number>>(
+    {},
+  );
+  const [notifiedDoses, setNotifiedDoses] = useState<Record<number, boolean>>({});
   const [showPast, setShowPast] = useState(false);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
   const [acknowledgedCutoff, setAcknowledgedCutoff] = useState(false);
   const [quote, setQuote] = useState("");
-  const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
-  
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("pokeMed_theme") as "light" | "dark" | null;
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
 
-    if (savedTheme) {
-      setThemeMode(savedTheme);
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    } else {
-      const isDark = mql.matches;
-      setThemeMode(isDark ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    }
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem("pokeMed_theme")) {
-        const isDark = e.matches;
-        setThemeMode(isDark ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  const updateUrl = useCallback(
+    (newLevel: Level, newTime: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("level", newLevel);
+      if (newTime) {
+        params.set("time", newTime);
+      } else {
+        params.delete("time");
       }
-    };
-
-    mql.addEventListener("change", handleChange);
-    return () => mql.removeEventListener("change", handleChange);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = themeMode === "light" ? "dark" : "light";
-    setThemeMode(newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("pokeMed_theme", newTheme);
-  };
-  
-  const updateUrl = useCallback((newLevel: Level, newTime: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("level", newLevel);
-    if (newTime) {
-      params.set("time", newTime);
-    } else {
-      params.delete("time");
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams]);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   const setLevel = (newLevel: Level) => {
     setLevelState(newLevel);
@@ -211,6 +207,13 @@ function AppContent() {
         setCompletedSteps(JSON.parse(savedSteps));
       } catch (e) {}
     }
+
+    const savedNotified = localStorage.getItem("pokeMed_notifiedDoses");
+    if (savedNotified) {
+      try {
+        setNotifiedDoses(JSON.parse(savedNotified));
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -222,28 +225,44 @@ function AppContent() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("pokeMed_completedSteps_v2", JSON.stringify(completedSteps));
+      localStorage.setItem(
+        "pokeMed_completedSteps_v2",
+        JSON.stringify(completedSteps),
+      );
+      localStorage.setItem(
+        "pokeMed_notifiedDoses",
+        JSON.stringify(notifiedDoses),
+      );
     }
-  }, [completedSteps, mounted]);
+  }, [completedSteps, notifiedDoses, mounted]);
 
   const handleReset = () => {
-    if (!confirm("RESET PROTOCOL?")) return;
+    if (!confirm("reset protocol?")) return;
     setStartTime("");
     setLevel("Charmander");
     setCompletedSteps({});
+    setNotifiedDoses({});
     localStorage.removeItem("pokeMed_startTime");
     localStorage.removeItem("pokeMed_level");
     localStorage.removeItem("pokeMed_completedSteps_v2");
+    localStorage.removeItem("pokeMed_notifiedDoses");
   };
 
   const handleUndo = () => {
-    const keys = Object.keys(completedSteps).map(Number).sort((a, b) => b - a);
+    const keys = Object.keys(completedSteps)
+      .map(Number)
+      .sort((a, b) => b - a);
     if (keys.length <= 1) return; // Don't undo dose 1 (which starts the protocol)
     const lastDoseNumber = keys[0];
-    
-    if (!confirm(`UNDO DOSE ${lastDoseNumber}?`)) return;
-    
+
+    if (!confirm(`undo dose ${lastDoseNumber}?`)) return;
+
     setCompletedSteps((prev) => {
+      const next = { ...prev };
+      delete next[lastDoseNumber];
+      return next;
+    });
+    setNotifiedDoses((prev) => {
       const next = { ...prev };
       delete next[lastDoseNumber];
       return next;
@@ -271,7 +290,14 @@ function AppContent() {
     const startMinutes = parseInt(minutesStr, 10);
 
     const now = new Date();
-    const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHours, startMinutes, 0);
+    const baseDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      startHours,
+      startMinutes,
+      0,
+    );
 
     const protocol = PROTOCOLS[level];
     const generated: DoseInfo[] = [];
@@ -294,10 +320,13 @@ function AppContent() {
 
       // Skip strict 18:00 cutoff display modal, just visually end or limit
       if (doseDate.getHours() >= 18 && i > 0) {
-         break;
+        break;
       }
 
-      const isNextDay = doseDate.getFullYear() > baseDate.getFullYear() || doseDate.getMonth() > baseDate.getMonth() || doseDate.getDate() > baseDate.getDate();
+      const isNextDay =
+        doseDate.getFullYear() > baseDate.getFullYear() ||
+        doseDate.getMonth() > baseDate.getMonth() ||
+        doseDate.getDate() > baseDate.getDate();
 
       generated.push({
         doseNumber,
@@ -318,21 +347,50 @@ function AppContent() {
   })();
 
   const nextDose = schedule.find((d) => !completedSteps[d.doseNumber]);
-  const isAllComplete = schedule.length > 0 && schedule.every(d => completedSteps[d.doseNumber]);
+  const isAllComplete =
+    schedule.length > 0 && schedule.every((d) => completedSteps[d.doseNumber]);
   const theme = THEMES[level];
   const willBeTruncated = schedule.length < PROTOCOLS[level].maxDoses;
 
   useEffect(() => {
-    if ('serviceWorker' in navigator && 'Notification' in window) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('SW registered', reg))
-        .catch(err => console.error('SW registration failed', err));
+    if ("serviceWorker" in navigator && "Notification" in window) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => console.log("SW registered", reg))
+        .catch((err) => console.error("SW registration failed", err));
     }
   }, []);
 
-  const startSchedule = async () => {
+  useEffect(() => {
+    if (!isStarted || !nextDose || !mounted) return;
+    if (notifiedDoses[nextDose.doseNumber]) return;
+
+    const now = Date.now();
+    const timeUntilDose = nextDose.actualTimeMs - now;
+
+    // If the dose time has already passed (e.g. app was closed and reopened), notify immediately
+    const delay = Math.max(0, timeUntilDose);
+
+    const timeout = setTimeout(() => {
+      if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(`dose ${String(nextDose.doseNumber).padStart(2, '0')} ready`, {
+            body: `it is time for your next dose (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
+            vibrate: [200, 100, 200, 100, 200],
+            tag: `dose-${nextDose.doseNumber}`,
+            requireInteraction: true,
+          } as NotificationOptions);
+        });
+      }
+      setNotifiedDoses((prev) => ({ ...prev, [nextDose.doseNumber]: true }));
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [nextDose, isStarted, mounted, notifiedDoses]);
+
+  const startSchedule = async (forceProceed = false) => {
     if (!startTime) return;
-    if (willBeTruncated && !acknowledgedCutoff) {
+    if (willBeTruncated && !acknowledgedCutoff && !forceProceed) {
       setShowCutoffModal(true);
       return;
     }
@@ -343,17 +401,17 @@ function AppContent() {
     setShowCutoffModal(false);
     setAcknowledgedCutoff(false);
 
-    if ('Notification' in window && 'serviceWorker' in navigator) {
+    if ("Notification" in window && "serviceWorker" in navigator) {
       let perm = Notification.permission;
-      if (perm === 'default') {
+      if (perm === "default") {
         perm = await Notification.requestPermission();
       }
-      if (perm === 'granted') {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.showNotification("Protocol Engaged", {
-            body: "Notifications are active. You will be reminded when it's time.",
+      if (perm === "granted") {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification("protocol engaged", {
+            body: "notifications are active. you will be reminded when it's time.",
             vibrate: [200, 100, 200],
-            tag: "protocol-start"
+            tag: "protocol-start",
           } as NotificationOptions);
         });
       }
@@ -363,10 +421,10 @@ function AppContent() {
   useEffect(() => {
     if (isAllComplete) {
       const quotes = [
-        "Great job sticking to the protocol today.",
-        "You conquered the day! Rest and recover.",
-        "Protocol complete. Your future self thanks you.",
-        "All doses logged. Time to wind down."
+        "great job sticking to the protocol today.",
+        "you conquered the day! rest and recover.",
+        "protocol complete. your future self thanks you.",
+        "all doses logged. time to wind down.",
       ];
       setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     }
@@ -378,22 +436,22 @@ function AppContent() {
   if (!isStarted || isAllComplete) {
     if (isAllComplete) {
       return (
-        <main className="min-h-screen flex flex-col pt-24 pb-8 px-6 max-w-lg mx-auto w-full fade-in items-center justify-center text-center">
+        <main className="min-h-screen flex flex-col pt-24 pb-8 px-6 max-w-lg mx-auto w-full items-center justify-center text-center">
           <div className="flex-1 flex flex-col items-center justify-center w-full">
-            <div className="w-16 h-16 rounded-full bg-panel flex items-center justify-center mb-8 border-[3px] border-border-theme shadow-[4px_4px_0px_0px_var(--color-border-theme)]">
-              <Check className="w-8 h-8 text-foreground" />
-            </div>
-            <h1 className="text-5xl font-sans tracking-tighter uppercase leading-none mb-12 text-foreground drop-shadow-[2px_2px_0px_var(--color-surface)]">
-              PROTOCOL<br/>COMPLETE
+            <Power className="w-12 h-12 text-foreground mb-8" strokeWidth={1} />
+            <h1 className="text-4xl text-semibold font-sans tracking-tighter leading-none mb-12 text-foreground">
+              protocol complete
             </h1>
             {quote && (
-              <div className={`text-3xl md:text-4xl font-sans tracking-tight ${theme.textClass} font-bold italic px-4 leading-tight drop-shadow-[2px_2px_0px_var(--color-surface)]`}>
+              <div
+                className={`text-2xl font-sans tracking-tight ${theme.textClass} px-4 leading-tight `}
+              >
                 "{quote}"
               </div>
             )}
           </div>
-          
-          <div className="w-full mt-12">
+
+          <div className="w-full mt-12 border-t border-border-theme pt-8">
             <button
               onClick={() => {
                 setStartTime("");
@@ -403,9 +461,9 @@ function AppContent() {
                 localStorage.removeItem("pokeMed_level");
                 localStorage.removeItem("pokeMed_completedSteps_v2");
               }}
-              className="w-full py-6 border-[3px] border-border-theme bg-surface text-foreground uppercase tracking-[0.2em] font-bold text-lg transition-all hover:bg-foreground hover:text-background shadow-[6px_6px_0px_0px_var(--color-border-theme)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none"
+              className="w-full py-4 border border-border-theme bg-surface text-foreground tracking-widest text-[13px] transition-all duration-100 ease-linear hover:bg-foreground hover:text-background"
             >
-              RESET PROTOCOL
+              reset protocol
             </button>
           </div>
         </main>
@@ -413,111 +471,123 @@ function AppContent() {
     }
 
     return (
-      <main className="min-h-screen flex flex-col pt-12 pb-8 px-6 max-w-lg mx-auto w-full fade-in">
-        <header className="mb-12 flex justify-between items-start">
+      <main className="min-h-screen flex flex-col pt-12 pb-8 px-6 max-w-lg mx-auto w-full ">
+        <header className="mb-12 flex justify-between items-start border-b border-border-theme pb-6">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-subtext mb-2 flex items-center gap-2 font-bold">
-              <Zap className="w-3 h-3" /> INITIALIZE PROTOCOL
+            <div className="text-[13px] tracking-wide text-subtext mb-2 flex items-center gap-2">
+              <Zap className="w-3 h-3" strokeWidth={1} /> initialize protocol
             </div>
-            <h1 className="text-4xl font-sans tracking-tighter uppercase leading-none text-foreground drop-shadow-[2px_2px_0px_var(--color-surface)]">
-              SET<br/>PARAMETERS
+            <h1 className="text-5xl font-sans tracking-tighter leading-none text-foreground">
+              set parameters
             </h1>
           </div>
-          <button 
-            onClick={toggleTheme}
-            className="w-10 h-10 flex items-center justify-center border-[2px] border-border-theme rounded-full text-foreground hover:bg-surface transition-all shadow-[2px_2px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
-            title="Toggle theme"
-          >
-            {themeMode === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-          </button>
         </header>
 
         <div className="flex-1 space-y-12">
           {/* LEVEL SELECTION */}
           <section>
-            <div className="text-xs uppercase tracking-widest text-subtext mb-4 border-b-[2px] border-surface pb-2 font-bold">01 // SELECT DOSAGE</div>
-            <div className="flex flex-col gap-3">
-              {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLevel(l)}
-                  className={`relative w-full text-left p-4 border-[3px] transition-all duration-200 uppercase tracking-widest text-lg overflow-hidden ${
-                    level === l 
-                      ? `${THEMES[l].bgClass} text-black border-border-theme font-bold shadow-[6px_6px_0px_0px_var(--color-border-theme)] translate-x-[-2px] translate-y-[-2px]` 
-                      : 'bg-background border-border-theme text-foreground hover:bg-surface shadow-[2px_2px_0px_0px_var(--color-border-theme)]'
-                  }`}
-                >
-                  <span className="relative z-10">{l}</span>
-                  {level === l && (
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 font-sans text-xl">
-                      ×{PROTOCOLS[l].maxDoses}
+            <div className="text-[13px] tracking-[0.05em] text-subtext mb-4 border-b border-surface pb-2">
+              01 // select dosage
+            </div>
+            <div className="flex flex-col gap-2">
+              {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map(
+                (l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLevel(l)}
+                    className={`relative w-full text-left p-4 border transition-colors duration-100 ease-linear tracking-[0.05em] text-base overflow-hidden flex justify-between items-center ${
+                      level === l
+                        ? `${THEMES[l].bgClass} text-white border-border-theme font-semibold`
+                        : "bg-background border-border-theme text-foreground hover:bg-surface"
+                    }`}
+                  >
+                    <span className="relative z-10 flex items-center gap-3">
+                      {l.toLowerCase()}
+                      <span className="text-xs opacity-70 font-normal">
+                        {PROTOCOLS[l].jp}
+                      </span>
                     </span>
-                  )}
-                </button>
-              ))}
+                    {level === l && (
+                      <span className="opacity-90 font-sans text-xs font-normal">
+                        ×{PROTOCOLS[l].maxDoses}
+                      </span>
+                    )}
+                  </button>
+                ),
+              )}
             </div>
           </section>
 
           {/* TIME SELECTION */}
           <section>
-            <div className="text-xs uppercase tracking-widest text-subtext mb-4 border-b-[2px] border-surface pb-2 font-bold">02 // T-ZERO (START TIME)</div>
-            <div className="flex items-center gap-4">
+            <div className="text-[13px] tracking-[0.05em] text-subtext mb-4 border-b border-surface pb-2">
+              02 // t-zero (start time)
+            </div>
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className={`w-full bg-panel border-[3px] ${startTime ? 'border-border-theme shadow-[4px_4px_0px_0px_var(--color-border-theme)]' : 'border-border-theme shadow-[2px_2px_0px_0px_var(--color-border-theme)] opacity-50'} text-foreground p-4 font-sans text-3xl uppercase appearance-none rounded-none focus:outline-none focus:shadow-[6px_6px_0px_0px_var(--color-border-theme)] transition-all`}
-                  style={{ colorScheme: themeMode }}
+                  className={`w-full bg-panel border ${startTime ? "border-border-theme text-foreground" : "border-surface text-disabled"} p-4 font-sans text-2xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-colors duration-100 ease-linear`}
                 />
               </div>
               <button
                 onClick={setNow}
-                className="h-[68px] px-6 border-[3px] border-border-theme bg-surface text-foreground font-bold hover:bg-foreground hover:text-background uppercase tracking-widest text-sm transition-all shadow-[4px_4px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                className="h-[66px] px-6 border border-border-theme bg-surface text-foreground hover:bg-foreground hover:text-background tracking-[0.05em] text-[13px] transition-colors duration-100 ease-linear"
               >
-                NOW
+                now
               </button>
             </div>
           </section>
         </div>
 
         {/* START BUTTON */}
-        <div className="mt-8">
+        <div className="mt-12">
           <button
-            onClick={startSchedule}
+            onClick={() => startSchedule(false)}
             disabled={!startTime}
-            className={`w-full py-6 uppercase tracking-[0.2em] font-bold text-lg border-[3px] border-border-theme transition-all ${
-              startTime 
-                ? `${theme.bgClass} text-black shadow-[6px_6px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[6px] active:translate-y-[6px]` 
-                : 'bg-surface text-subtext opacity-50 cursor-not-allowed shadow-none'
+            className={`w-full py-4 tracking-[0.1em] text-[13px] border transition-colors duration-100 ease-linear ${
+              startTime
+                ? `${theme.bgClass} text-white border-border-theme hover:brightness-110 font-semibold`
+                : "bg-surface text-disabled border-surface cursor-not-allowed"
             }`}
           >
-            ENGAGE
+            engage
           </button>
         </div>
 
         {/* CUTOFF WARNING MODAL */}
         {showCutoffModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-6 fade-in">
-            <div className="bg-panel border-[3px] border-border-theme shadow-[8px_8px_0px_0px_var(--color-border-theme)] p-6 max-w-sm w-full">
-              <h2 className="text-xl font-bold text-foreground mb-4 uppercase tracking-widest flex items-center gap-2">
-                <AlertCircle className={`w-5 h-5 ${theme.textClass}`} /> Schedule Adjusted
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
+            <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
+              <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
+                <AlertCircle
+                  className={`w-4 h-4 ${theme.textClass}`}
+                  strokeWidth={1}
+                />{" "}
+                schedule adjusted
               </h2>
-              <p className="text-subtext font-bold mb-6 text-sm">
-                The calculated schedule goes past 18:00. To prevent sleep disruption, some late doses have been omitted from this protocol.
+              <p className="text-subtext mb-8 text-[13px] leading-relaxed">
+                the calculated schedule goes past 18:00. to prevent sleep
+                disruption, some late doses have been omitted from this
+                protocol.
               </p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowCutoffModal(false)} 
-                  className="flex-1 py-3 border-[3px] border-border-theme bg-surface text-foreground font-bold uppercase tracking-widest text-sm hover:bg-foreground hover:text-background transition-all shadow-[4px_4px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCutoffModal(false)}
+                  className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
                 >
-                  Cancel
+                  cancel
                 </button>
-                <button 
-                  onClick={() => { setAcknowledgedCutoff(true); setTimeout(startSchedule, 0); }} 
-                  className={`flex-1 py-3 border-[3px] border-border-theme ${theme.bgClass} text-black uppercase tracking-widest text-sm font-bold shadow-[4px_4px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all`}
+                <button
+                  onClick={() => {
+                    setAcknowledgedCutoff(true);
+                    startSchedule(true);
+                  }}
+                  className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
                 >
-                  Proceed
+                  proceed
                 </button>
               </div>
             </div>
@@ -531,57 +601,50 @@ function AppContent() {
   // RENDER: MAIN TRACKING SCREEN
   // ==============================
   return (
-    <main className="min-h-screen flex flex-col w-full max-w-lg mx-auto relative fade-in">
-      
+    <main className="min-h-screen flex flex-col w-full max-w-lg mx-auto relative ">
       {/* HEADER / NAVIGATION */}
       <header className="flex items-center justify-between p-6 pb-0">
-        <div className="text-[10px] uppercase tracking-[0.2em] flex flex-col font-bold">
-          <span className="text-subtext">PROTOCOL //</span>
-          <span className={`${theme.textClass} drop-shadow-[1px_1px_0px_var(--color-surface)]`}>{level}</span>
+        <div className="text-[13px] tracking-[0.05em] flex flex-col">
+          <span className="text-subtext">protocol //</span>
+          <span className={`${theme.textClass} flex items-center gap-2`}>
+            {level.toLowerCase()}{" "}
+            <span className="opacity-50 text-[11px]">
+              {PROTOCOLS[level].jp}
+            </span>
+          </span>
         </div>
         <div className="flex gap-2">
           {Object.keys(completedSteps).length > 1 && (
-            <button 
+            <button
               onClick={handleUndo}
-              className="w-10 h-10 flex items-center justify-center border-[2px] border-border-theme rounded-full bg-panel text-foreground hover:bg-surface transition-all shadow-[2px_2px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
-              title="Undo last logged dose"
+              className="w-12 h-12 flex items-center justify-center border border-border-theme rounded-none bg-panel text-foreground hover:bg-surface transition-colors duration-100 ease-linear"
+              title="undo last logged dose"
             >
-              <Undo className="w-4 h-4" />
+              <Undo className="w-5 h-5" strokeWidth={1.5} />
             </button>
           )}
-          <button 
+          <button
             onClick={handleReset}
-            className="w-10 h-10 flex items-center justify-center border-[2px] border-border-theme rounded-full bg-panel text-foreground hover:bg-surface transition-all shadow-[2px_2px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+            className="w-12 h-12 flex items-center justify-center border border-border-theme rounded-none bg-panel text-foreground hover:bg-surface transition-colors duration-100 ease-linear"
           >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={toggleTheme}
-            className="w-10 h-10 flex items-center justify-center border-[2px] border-border-theme rounded-full bg-panel text-foreground hover:bg-surface transition-all shadow-[2px_2px_0px_0px_var(--color-border-theme)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
-            title="Toggle theme"
-          >
-            {themeMode === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            <RotateCcw className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
       </header>
 
       {/* HERO: NEXT DOSE TIME */}
-      <section className="flex flex-col items-center justify-center pt-8 pb-12 px-4 shrink-0">
-        <div className="text-xs uppercase tracking-widest text-subtext font-bold mb-2 flex items-center gap-2">
-          {nextDose ? (
-            <>T-MINUS // NEXT DOSE</>
-          ) : (
-            <>T-PLUS // COMPLETE</>
-          )}
+      <section className="flex flex-col items-center justify-center pt-24 pb-16 px-4 shrink-0">
+        <div className="text-[13px] tracking-[0.05em] text-subtext mb-2 flex items-center gap-2">
+          {nextDose ? <>t-minus // next dose</> : <>t-plus // complete</>}
         </div>
         <div className="w-full relative flex items-center justify-center">
-          <h1 
-            className="font-sans text-[clamp(6rem,25vw,10rem)] leading-none tracking-tighter text-foreground drop-shadow-[4px_4px_0px_var(--color-surface)] select-none"
-          >
-            {nextDose ? nextDose.timeLabel : "DONE"}
+          <h1 className="font-sans text-[clamp(5rem,20vw,8rem)] leading-none tracking-tighter text-foreground select-none [font-variant-numeric:tabular-nums]">
+            {nextDose ? nextDose.timeLabel : "done"}
           </h1>
           {nextDose && (
-            <span className={`absolute -right-2 top-2 ${theme.bgClass} text-black px-2 border-[2px] border-border-theme font-sans text-2xl font-bold shadow-[2px_2px_0px_0px_var(--color-border-theme)] translate-y-[-10px] rotate-[10deg]`}>
+            <span
+              className={`absolute -right-2 top-2 ${theme.bgClass} text-white px-2 border border-border-theme font-sans text-xl font-normal translate-y-[-10px]`}
+            >
               ×{nextDose.portions}
             </span>
           )}
@@ -589,63 +652,79 @@ function AppContent() {
       </section>
 
       {/* SCHEDULE LIST (RECEIPT STYLE) */}
-      <section className="flex-1 overflow-y-auto px-6 pb-32 flex flex-col">
+      <section className="flex-1 overflow-y-auto px-6 pb-40 flex flex-col">
         {Object.keys(completedSteps).length > 0 && (
           <div className="flex justify-end mb-2">
-            <button 
+            <button
               onClick={() => setShowPast(!showPast)}
-              className="text-[10px] uppercase tracking-widest text-subtext hover:text-foreground transition-colors font-bold"
+              className="text-[13px] tracking-[0.05em] text-subtext hover:text-foreground transition-colors duration-100"
             >
-              {showPast ? "- HIDE PAST" : "+ SHOW PAST"}
+              {showPast ? "- hide past" : "+ show past"}
             </button>
           </div>
         )}
-        <div className="border-t-[3px] border-border-theme">
+        <div className="border-t border-border-theme">
           {schedule.map((dose) => {
             const isCompleted = !!completedSteps[dose.doseNumber];
             const isNext = nextDose?.doseNumber === dose.doseNumber;
             const isFuture = !isCompleted && !isNext;
-            
+
             if (isCompleted && !showPast) return null;
-            
+
             const actualTimeMs = completedSteps[dose.doseNumber];
-            const actualTimeLabel = actualTimeMs ? timeFormatter.format(new Date(actualTimeMs)) : null;
+            const actualTimeLabel = actualTimeMs
+              ? timeFormatter.format(new Date(actualTimeMs))
+              : null;
 
             return (
-              <div 
-                key={dose.doseNumber} 
-                className={`py-4 border-b-[3px] border-surface flex items-center justify-between transition-colors ${
-                  isCompleted ? 'opacity-40 bg-surface' : isNext ? 'opacity-100 bg-panel border-border-theme px-2 translate-x-[-4px] shadow-[4px_4px_0px_0px_var(--color-border-theme)] my-2' : 'opacity-70'
+              <div
+                key={dose.doseNumber}
+                className={`py-3 border-b border-surface flex items-center justify-between transition-colors duration-100 ease-linear ${
+                  isCompleted
+                    ? "opacity-40 bg-surface"
+                    : isNext
+                      ? "opacity-100 bg-panel border-border-theme px-2 my-2"
+                      : "opacity-70"
                 }`}
               >
                 <div className="flex items-baseline gap-4">
-                  <span className={`w-6 text-xs text-subtext font-bold ${isNext ? theme.textClass : ''}`}>
-                    {String(dose.doseNumber).padStart(2, '0')}
+                  <span
+                    className={`w-6 text-[13px] text-subtext ${isNext ? theme.textClass : ""}`}
+                  >
+                    {String(dose.doseNumber).padStart(2, "0")}
                   </span>
                   <div className="flex items-baseline gap-2">
-                    <span className={`text-2xl font-sans tracking-tight ${isCompleted ? 'line-through text-subtext' : isNext ? 'text-foreground' : 'text-subtext'}`}>
+                    <span
+                      className={`text-2xl font-sans tracking-tight [font-variant-numeric:tabular-nums] ${isCompleted ? "line-through text-subtext" : isNext ? "text-foreground" : "text-subtext"}`}
+                    >
                       {dose.timeLabel}
                     </span>
                     {isCompleted && actualTimeLabel && (
-                      <span className="text-sm font-sans tracking-tight text-subtext">
+                      <span className="text-sm font-sans tracking-tight text-subtext [font-variant-numeric:tabular-nums]">
                         [{actualTimeLabel}]
                       </span>
                     )}
                   </div>
                   {dose.isNextDay && (
-                    <span className="text-[9px] uppercase tracking-widest bg-surface border-[1px] border-border-theme px-1 text-subtext font-bold shadow-[1px_1px_0px_0px_var(--color-border-theme)]">
-                      +1D
+                    <span className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext">
+                      +1d
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-subtext tracking-widest font-bold">
-                    {dose.portions} PILL{dose.portions > 1 ? 'S' : ''}
+                  <span className="text-[13px] text-subtext tracking-[0.05em]">
+                    {dose.portions} pill{dose.portions > 1 ? "s" : ""}
                   </span>
-                  <div className={`w-4 h-4 border-[2px] border-border-theme rounded-full ${
-                    isCompleted ? 'bg-surface shadow-none' : isNext ? `${theme.bgClass} shadow-[2px_2px_0px_0px_var(--color-border-theme)] animate-pulse` : 'bg-background shadow-[1px_1px_0px_0px_var(--color-border-theme)]'
-                  }`} />
+                  <div
+                    className={`w-3 h-3 border rounded-none ${
+                      isCompleted
+                        ? `border-border-theme ${theme.bgClass}`
+                        : isNext
+                          ? `${theme.borderClass} bg-transparent`
+                          : "border-border-theme bg-transparent"
+                    }`}
+                  />
                 </div>
               </div>
             );
@@ -654,15 +733,14 @@ function AppContent() {
       </section>
 
       {/* BOTTOM ACTION AREA */}
-      <div className="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto">
-        <HoldButton 
+      <div className="fixed bottom-8 left-0 right-0 w-full max-w-lg mx-auto px-6">
+        <HoldButton
           onComplete={() => nextDose && completeStep(nextDose.doseNumber)}
           theme={theme}
           disabled={!nextDose}
-          label={nextDose ? "HOLD TO CONSUME" : "PROTOCOL COMPLETE"}
+          label={nextDose ? "hold to consume" : "protocol complete"}
         />
       </div>
-
     </main>
   );
 }

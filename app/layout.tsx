@@ -1,20 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Azeret_Mono } from "next/font/google";
 import "./globals.css";
 
-const anton = Anton({
-  weight: "400",
-  variable: "--font-anton",
-  subsets: ["latin"],
-});
-
-const azeretMono = Azeret_Mono({
-  variable: "--font-azeret",
-  subsets: ["latin"],
-});
-
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f0e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -22,15 +13,15 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "DOSE | PROTOCOL",
-  description: "Minimalist dosage calculator",
+  title: "dose | protocol",
+  description: "dosage calculator",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "DOSE",
+    title: "dose",
     statusBarStyle: "black-translucent",
   },
-  applicationName: "DOSE",
+  applicationName: "dose",
   formatDetection: {
     telephone: false,
   },
@@ -44,11 +35,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      style={{ colorScheme: "dark" }}
-      className={`${anton.variable} ${azeretMono.variable} h-full antialiased dark`}
+      className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col touch-manipulation overscroll-none bg-black text-white selection:bg-white selection:text-black">
-        <div className="fixed inset-0 pointer-events-none z-50 mix-blend-overlay noise-bg opacity-[0.15]" />
+      <body className="min-h-full flex flex-col touch-manipulation overscroll-none selection:bg-foreground selection:text-background lowercase">
         {children}
       </body>
     </html>
