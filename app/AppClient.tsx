@@ -118,6 +118,16 @@ const MOTIVATIONAL_WORDS = [
   "LOCKED IN!",
 ];
 
+const sendNotification = (title: string, options: NotificationOptions) => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.showNotification(title, options);
+    });
+  } else {
+    new Notification(title, options);
+  }
+};
+
 export default function AppClient({
   initialLevel,
   initialTime,
@@ -281,11 +291,19 @@ export default function AppClient({
     if (Notification.permission === "granted") {
       setNotificationsEnabled(true);
       localStorage.setItem("pokeMed_notifications", "true");
+      sendNotification("Notifications Enabled! 🔔", {
+        body: "You will now receive alerts for your schedule. Keep the app open in the background to receive timely reminders.",
+        icon: "/icon",
+      });
     } else if (Notification.permission !== "denied") {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
         localStorage.setItem("pokeMed_notifications", "true");
+        sendNotification("Notifications Enabled! 🔔", {
+          body: "You will now receive alerts for your schedule. Keep the app open in the background to receive timely reminders.",
+          icon: "/icon",
+        });
       }
     }
   };
@@ -379,8 +397,9 @@ export default function AppClient({
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (timeUntilDose > 0) {
       timeoutRef.current = setTimeout(() => {
-        new Notification("Time for your next Ritalin!", {
+        sendNotification("Time for your next Ritalin!", {
           body: `Dose ${nextDoseItem.doseNumber}: ${nextDoseItem.portions} pill(s). Grab some water!`,
+          icon: "/icon",
         });
       }, timeUntilDose);
     }
