@@ -471,7 +471,7 @@ function AppContent() {
     }
 
     return (
-      <main className="min-h-screen flex flex-col pt-12 pb-8 px-6 max-w-lg mx-auto w-full ">
+      <main className="min-h-screen flex flex-col pt-12 pb-24 px-6 max-w-lg mx-auto w-full ">
         <header className="mb-12 flex justify-between items-start border-b border-border-theme pb-6">
           <div>
             <div className="text-[13px] tracking-wide text-subtext mb-2 flex items-center gap-2">
