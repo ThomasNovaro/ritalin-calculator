@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Clock, RotateCcw, Check, Zap, AlertCircle } from "lucide-react";
+import { Clock, RotateCcw, Check, Zap, AlertCircle, Undo } from "lucide-react";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -131,6 +131,7 @@ function AppContent() {
   const [startTime, setStartTimeState] = useState<string>(urlTime);
   const [mounted, setMounted] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Record<number, number>>({});
+  const [showPast, setShowPast] = useState(false);
   
   const updateUrl = useCallback((newLevel: Level, newTime: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -199,6 +200,20 @@ function AppContent() {
     localStorage.removeItem("pokeMed_completedSteps_v2");
   };
 
+  const handleUndo = () => {
+    const keys = Object.keys(completedSteps).map(Number).sort((a, b) => b - a);
+    if (keys.length <= 1) return; // Don't undo dose 1 (which starts the protocol)
+    const lastDoseNumber = keys[0];
+    
+    if (!confirm(`UNDO DOSE ${lastDoseNumber}?`)) return;
+    
+    setCompletedSteps((prev) => {
+      const next = { ...prev };
+      delete next[lastDoseNumber];
+      return next;
+    });
+  };
+
   const completeStep = (step: number) => {
     if (completedSteps[step]) return;
     const now = new Date().getTime();
@@ -215,7 +230,7 @@ function AppContent() {
     const [hoursStr, minutesStr] = startTime.split(":");
     const now = new Date();
     now.setHours(parseInt(hoursStr, 10), parseInt(minutesStr, 10), 0, 0);
-    setCompletedSteps((prev) => ({ ...prev, [1]: now.getTime() }));
+    setCompletedSteps({ 1: now.getTime() });
   };
 
   const isStarted = !!completedSteps[1];
@@ -372,12 +387,23 @@ function AppContent() {
           <span className="text-[#666]">PROTOCOL //</span>
           <span className={`${theme.textClass} font-bold`}>{level}</span>
         </div>
-        <button 
-          onClick={handleReset}
-          className="w-10 h-10 flex items-center justify-center border border-[#333] rounded-full text-[#666] hover:text-white hover:border-white transition-colors"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
+        <div className="flex gap-2">
+          {Object.keys(completedSteps).length > 1 && (
+            <button 
+              onClick={handleUndo}
+              className="w-10 h-10 flex items-center justify-center border border-[#333] rounded-full text-[#666] hover:text-white hover:border-white transition-colors"
+              title="Undo last logged dose"
+            >
+              <Undo className="w-4 h-4" />
+            </button>
+          )}
+          <button 
+            onClick={handleReset}
+            className="w-10 h-10 flex items-center justify-center border border-[#333] rounded-full text-[#666] hover:text-white hover:border-white transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       {/* HERO: NEXT DOSE TIME */}
@@ -404,12 +430,27 @@ function AppContent() {
       </section>
 
       {/* SCHEDULE LIST (RECEIPT STYLE) */}
-      <section className="flex-1 overflow-y-auto px-6 pb-32">
+      <section className="flex-1 overflow-y-auto px-6 pb-32 flex flex-col">
+        {Object.keys(completedSteps).length > 0 && (
+          <div className="flex justify-end mb-2">
+            <button 
+              onClick={() => setShowPast(!showPast)}
+              className="text-[10px] uppercase tracking-widest text-[#888] hover:text-white transition-colors"
+            >
+              {showPast ? "- HIDE PAST" : "+ SHOW PAST"}
+            </button>
+          </div>
+        )}
         <div className="border-t border-[#333]">
           {schedule.map((dose) => {
             const isCompleted = !!completedSteps[dose.doseNumber];
             const isNext = nextDose?.doseNumber === dose.doseNumber;
             const isFuture = !isCompleted && !isNext;
+            
+            if (isCompleted && !showPast) return null;
+            
+            const actualTimeMs = completedSteps[dose.doseNumber];
+            const actualTimeLabel = actualTimeMs ? timeFormatter.format(new Date(actualTimeMs)) : null;
 
             return (
               <div 
@@ -422,9 +463,16 @@ function AppContent() {
                   <span className={`w-6 text-xs text-[#555] ${isNext ? theme.textClass : ''}`}>
                     {String(dose.doseNumber).padStart(2, '0')}
                   </span>
-                  <span className={`text-2xl font-sans tracking-tight ${isCompleted ? 'line-through text-[#666]' : isNext ? 'text-white' : 'text-[#aaa]'}`}>
-                    {dose.timeLabel}
-                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-2xl font-sans tracking-tight ${isCompleted ? 'line-through text-[#666]' : isNext ? 'text-white' : 'text-[#aaa]'}`}>
+                      {dose.timeLabel}
+                    </span>
+                    {isCompleted && actualTimeLabel && (
+                      <span className="text-sm font-sans tracking-tight text-[#888]">
+                        [{actualTimeLabel}]
+                      </span>
+                    )}
+                  </div>
                   {dose.isNextDay && (
                     <span className="text-[9px] uppercase tracking-widest bg-[#222] px-1 text-[#888]">
                       +1D
