@@ -2,20 +2,47 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Clock, Target, RotateCcw, Check, Eye, EyeOff, Pill, Bell, BellRing, AlertCircle } from "lucide-react";
-import { LazyMotion, domAnimation, m as motion, AnimatePresence } from "framer-motion";
+import {
+  Clock,
+  Target,
+  RotateCcw,
+  Check,
+  Eye,
+  EyeOff,
+  Pill,
+  Bell,
+  BellRing,
+  AlertCircle,
+} from "lucide-react";
+import {
+  LazyMotion,
+  domAnimation,
+  m as motion,
+  AnimatePresence,
+} from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dynamic from "next/dynamic";
 
-const CutoffModal = dynamic(() => import("./components/CutoffModal"), { ssr: false });
+const CutoffModal = dynamic(() => import("./components/CutoffModal"), {
+  ssr: false,
+});
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 const PokeballIcon = ({ className, "aria-hidden": ariaHidden }: any) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaHidden}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden={ariaHidden}
+  >
     <g transform="rotate(45 12 12)">
       <rect x="7" y="3" width="10" height="18" rx="5" />
       <circle cx="12" cy="12" r="2.5" />
@@ -40,10 +67,31 @@ const PROTOCOLS: Record<Level, { maxDoses: number; portions: number[] }> = {
   Charizard: { maxDoses: 3, portions: [2, 2, 2] },
 };
 
-const THEMES: Record<Level, { bg: string; text: string; border: string; intensity: number; label: string }> = {
-  Charmander: { bg: "bg-[#FF5E00]", text: "text-[#FF5E00]", border: "border-[#FF5E00]", intensity: 1, label: "Soft Focus" },
-  Charmeleon: { bg: "bg-[#FF0055]", text: "text-[#FF0055]", border: "border-[#FF0055]", intensity: 2, label: "Deep Work" },
-  Charizard: { bg: "bg-[#7000FF]", text: "text-[#7000FF]", border: "border-[#7000FF]", intensity: 3, label: "Overdrive" },
+const THEMES: Record<
+  Level,
+  { bg: string; text: string; border: string; intensity: number; label: string }
+> = {
+  Charmander: {
+    bg: "bg-[#FF5E00]",
+    text: "text-[#FF5E00]",
+    border: "border-[#FF5E00]",
+    intensity: 1,
+    label: "Soft Focus",
+  },
+  Charmeleon: {
+    bg: "bg-[#FF0055]",
+    text: "text-[#FF0055]",
+    border: "border-[#FF0055]",
+    intensity: 2,
+    label: "Deep Work",
+  },
+  Charizard: {
+    bg: "bg-[#7000FF]",
+    text: "text-[#7000FF]",
+    border: "border-[#7000FF]",
+    intensity: 3,
+    label: "Overdrive",
+  },
 };
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -57,7 +105,7 @@ const COMPLETION_MESSAGES = [
   "Incredible focus today! 🧠",
   "Unstoppable energy! 🔥",
   "You absolutely crushed this! 🎯",
-  "Protocol flawlessly executed! 🚀"
+  "Protocol flawlessly executed! 🚀",
 ];
 
 const MOTIVATIONAL_WORDS = [
@@ -67,10 +115,16 @@ const MOTIVATIONAL_WORDS = [
   "NAILED IT!",
   "SHARP!",
   "FOCUS UP!",
-  "LOCKED IN!"
+  "LOCKED IN!",
 ];
 
-export default function AppClient({ initialLevel, initialTime }: { initialLevel: Level, initialTime: string }) {
+export default function AppClient({
+  initialLevel,
+  initialTime,
+}: {
+  initialLevel: Level;
+  initialTime: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -78,24 +132,32 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
   const [level, setLevelState] = useState<Level>(initialLevel);
   const [startTime, setStartTimeState] = useState<string>(initialTime);
   const [mounted, setMounted] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Record<number, number>>({});
-  const [animatingStep, setAnimatingStep] = useState<{ step: number, word: string } | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<Record<number, number>>(
+    {},
+  );
+  const [animatingStep, setAnimatingStep] = useState<{
+    step: number;
+    word: string;
+  } | null>(null);
   const [showFullSchedule, setShowFullSchedule] = useState(true);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updateUrl = useCallback((newLevel: Level, newTime: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("level", newLevel);
-    if (newTime) {
-      params.set("time", newTime);
-    } else {
-      params.delete("time");
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams]);
+  const updateUrl = useCallback(
+    (newLevel: Level, newTime: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("level", newLevel);
+      if (newTime) {
+        params.set("time", newTime);
+      } else {
+        params.delete("time");
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   const setLevel = (newLevel: Level) => {
     setLevelState(newLevel);
@@ -111,6 +173,11 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
 
   useEffect(() => {
     setMounted(true);
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(console.error);
+    }
+
     if (!initialTime) {
       const savedTime = localStorage.getItem("pokeMed_startTime");
       const savedLevel = localStorage.getItem("pokeMed_level") as Level | null;
@@ -130,14 +197,23 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
       } catch (e) {}
     }
 
-    if (savedNotifs === "true" && "Notification" in window && Notification.permission === "granted") {
+    if (
+      savedNotifs === "true" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       setNotificationsEnabled(true);
     }
   }, [initialTime, updateUrl]);
 
   const handleReset = () => {
     if (Object.keys(completedSteps).length > 0) {
-      if (!confirm("Are you sure you want to reset your entire schedule? This action cannot be undone.")) return;
+      if (
+        !confirm(
+          "Are you sure you want to reset your entire schedule? This action cannot be undone.",
+        )
+      )
+        return;
     }
     setStartTimeState("");
     setLevelState("Charmander");
@@ -153,10 +229,11 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
 
   const completeStep = (step: number) => {
     if (completedSteps[step] || animatingStep) return;
-    
-    const word = MOTIVATIONAL_WORDS[Math.floor(Math.random() * MOTIVATIONAL_WORDS.length)];
+
+    const word =
+      MOTIVATIONAL_WORDS[Math.floor(Math.random() * MOTIVATIONAL_WORDS.length)];
     setAnimatingStep({ step, word });
-    
+
     setTimeout(() => {
       const now = new Date().getTime();
       setCompletedSteps((prev) => {
@@ -221,7 +298,14 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
     const startHours = parseInt(hoursStr, 10);
     const startMinutes = parseInt(minutesStr, 10);
     const now = new Date();
-    const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHours, startMinutes, 0);
+    const baseDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      startHours,
+      startMinutes,
+      0,
+    );
 
     const protocol = PROTOCOLS[level];
     const generated: DoseInfo[] = [];
@@ -248,7 +332,10 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
         break;
       }
 
-      const isNextDay = doseDate.getFullYear() > baseDate.getFullYear() || doseDate.getMonth() > baseDate.getMonth() || doseDate.getDate() > baseDate.getDate();
+      const isNextDay =
+        doseDate.getFullYear() > baseDate.getFullYear() ||
+        doseDate.getMonth() > baseDate.getMonth() ||
+        doseDate.getDate() > baseDate.getDate();
 
       generated.push({
         doseNumber,
@@ -270,7 +357,12 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
   }, [mounted, startTime, level, completedSteps]);
 
   useEffect(() => {
-    if (isStarted && hitCutoff && schedule.length > 0 && !localStorage.getItem("pokeMed_cutoffModalShown")) {
+    if (
+      isStarted &&
+      hitCutoff &&
+      schedule.length > 0 &&
+      !localStorage.getItem("pokeMed_cutoffModalShown")
+    ) {
       setShowCutoffModal(true);
       localStorage.setItem("pokeMed_cutoffModalShown", "true");
     }
@@ -297,14 +389,19 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
     };
   }, [schedule, completedSteps, notificationsEnabled, isStarted]);
 
-  const { totalPortions, completedPortions, nextDose, isAllComplete } = useMemo(() => {
-    return {
-      totalPortions: schedule.reduce((sum, dose) => sum + dose.portions, 0),
-      completedPortions: schedule.filter((dose) => completedSteps[dose.doseNumber]).reduce((sum, dose) => sum + dose.portions, 0),
-      nextDose: schedule.find((d) => !completedSteps[d.doseNumber]),
-      isAllComplete: schedule.length > 0 && schedule.every(d => completedSteps[d.doseNumber])
-    };
-  }, [schedule, completedSteps]);
+  const { totalPortions, completedPortions, nextDose, isAllComplete } =
+    useMemo(() => {
+      return {
+        totalPortions: schedule.reduce((sum, dose) => sum + dose.portions, 0),
+        completedPortions: schedule
+          .filter((dose) => completedSteps[dose.doseNumber])
+          .reduce((sum, dose) => sum + dose.portions, 0),
+        nextDose: schedule.find((d) => !completedSteps[d.doseNumber]),
+        isAllComplete:
+          schedule.length > 0 &&
+          schedule.every((d) => completedSteps[d.doseNumber]),
+      };
+    }, [schedule, completedSteps]);
 
   // Use a fallback UI that matches the background during SSR/hydration to prevent flicker
   if (!mounted) {
@@ -315,10 +412,15 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
 
   return (
     <LazyMotion features={domAnimation}>
-      <div className="relative min-h-[100dvh] pb-24 overflow-x-hidden font-sans bg-[#F4F4F0] dark:bg-[#0A0A0A] text-[#1A1A1A] dark:text-[#F4F4F0] antialiased selection:bg-[#FF5E00] selection:text-white">
+      <div className="relative min-h-[100dvh] pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] overflow-x-hidden font-sans bg-[#F4F4F0] dark:bg-[#0A0A0A] text-[#1A1A1A] dark:text-[#F4F4F0] antialiased selection:bg-[#FF5E00] selection:text-white">
         {/* Background glow based on level */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex justify-center items-start">
-          <div className={cn("absolute -top-[30%] w-[120vw] h-[60vw] blur-[120px] opacity-[0.15] dark:opacity-[0.25] transition-colors duration-1000 rounded-full", THEMES[level].bg)} />
+          <div
+            className={cn(
+              "absolute -top-[30%] w-[120vw] h-[60vw] blur-[120px] opacity-[0.15] dark:opacity-[0.25] transition-colors duration-1000 rounded-full",
+              THEMES[level].bg,
+            )}
+          />
         </div>
 
         <AnimatePresence>
@@ -327,56 +429,92 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
           ) : null}
         </AnimatePresence>
 
-        <main className="relative z-10 max-w-md mx-auto w-full px-5 pt-8 space-y-10">
-          
+        <main className="relative z-10 max-w-md mx-auto w-full px-5 pt-8 space-y-10 select-none">
           {/* Header */}
           <header className="flex justify-between items-center">
             <div>
-              <h1 className="font-serif text-4xl font-black tracking-tighter leading-none">Poké<br/><span className={THEMES[level].text}>Med.</span></h1>
-              <p className="font-sans font-bold text-[10px] uppercase tracking-widest opacity-50 mt-2">Daily Schedule</p>
+              <h1 className="font-serif text-4xl font-black tracking-tighter leading-none">
+                Poké
+                <br />
+                <span className={THEMES[level].text}>Med.</span>
+              </h1>
+              <p className="font-sans font-bold text-[10px] uppercase tracking-widest opacity-50 mt-2">
+                Daily Schedule
+              </p>
             </div>
-            <div className={cn("p-3 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] text-white shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] transition-colors duration-500", THEMES[level].bg)}>
+            <div
+              className={cn(
+                "p-3 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] text-white shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] transition-colors duration-500",
+                THEMES[level].bg,
+              )}
+            >
               <PokeballIcon className="w-8 h-8" />
             </div>
           </header>
 
           {!isStarted ? (
-            <motion.section layout className="space-y-8">
+            <motion.section layout className="space-y-8 will-change-transform">
               <div className="space-y-4">
-                <h2 className="font-serif text-2xl font-black tracking-tight">Protocol</h2>
+                <h2 className="font-serif text-2xl font-black tracking-tight">
+                  Protocol
+                </h2>
                 <div className="grid grid-cols-3 gap-3">
-                  {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => {
-                    const isActive = level === l;
-                    return (
-                      <button
-                        key={l}
-                        onClick={() => setLevel(l)}
-                        className={cn(
-                          "relative flex flex-col items-center justify-center p-4 min-h-[140px] rounded-[1.5rem] border-4 transition-all duration-300 outline-none",
-                          isActive 
-                            ? cn("border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] scale-100", THEMES[l].bg, "text-white z-10") 
-                            : "border-[#1A1A1A]/10 dark:border-white/10 hover:border-[#1A1A1A]/30 bg-white dark:bg-[#151515] scale-[0.96] hover:scale-100 opacity-60 hover:opacity-100"
-                        )}
-                      >
-                        <div className="flex gap-1 mb-3">
-                          {Array.from({ length: THEMES[l].intensity }).map((_, i) => (
-                            <Target key={i} className={cn("w-5 h-5", isActive ? "text-white" : THEMES[l].text)} strokeWidth={3} />
-                          ))}
-                        </div>
-                        <div className="font-sans font-black text-[10px] uppercase tracking-widest">{l}</div>
-                        <div className="font-sans text-[8px] font-bold opacity-70 uppercase tracking-widest mt-2">{THEMES[l].label}</div>
-                      </button>
-                    );
-                  })}
+                  {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map(
+                    (l) => {
+                      const isActive = level === l;
+                      return (
+                        <button
+                          key={l}
+                          onClick={() => setLevel(l)}
+                          className={cn(
+                            "relative flex flex-col items-center justify-center p-4 min-h-[140px] rounded-[1.5rem] border-4 transition-all duration-300 outline-none",
+                            isActive
+                              ? cn(
+                                  "border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] scale-100",
+                                  THEMES[l].bg,
+                                  "text-white z-10",
+                                )
+                              : "border-[#1A1A1A]/10 dark:border-white/10 hover:border-[#1A1A1A]/30 bg-white dark:bg-[#151515] scale-[0.96] hover:scale-100 opacity-60 hover:opacity-100",
+                          )}
+                        >
+                          <div className="flex gap-1 mb-3">
+                            {Array.from({ length: THEMES[l].intensity }).map(
+                              (_, i) => (
+                                <Target
+                                  key={i}
+                                  className={cn(
+                                    "w-5 h-5",
+                                    isActive ? "text-white" : THEMES[l].text,
+                                  )}
+                                  strokeWidth={3}
+                                />
+                              ),
+                            )}
+                          </div>
+                          <div className="font-sans font-black text-[10px] uppercase tracking-widest">
+                            {l}
+                          </div>
+                          <div className="font-sans text-[8px] font-bold opacity-70 uppercase tracking-widest mt-2">
+                            {THEMES[l].label}
+                          </div>
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <label className="font-serif text-2xl font-black tracking-tight block">First Intake Time</label>
+                <label className="font-serif text-2xl font-black tracking-tight block">
+                  First Intake Time
+                </label>
                 <div className="flex gap-2 sm:gap-3 pr-1 pb-1">
                   <div className="relative flex-1 min-w-0">
                     <div className="absolute inset-y-0 left-3 sm:left-5 flex items-center pointer-events-none opacity-40">
-                      <Clock className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      <Clock
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                        strokeWidth={3}
+                      />
                     </div>
                     <input
                       type="time"
@@ -401,7 +539,7 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                   onClick={startSchedule}
                   className={cn(
                     "w-full py-6 rounded-3xl border-4 border-[#1A1A1A] dark:border-[#333] text-white shadow-[6px_6px_0px_#1a1a1a] dark:shadow-[6px_6px_0px_#000] active:translate-y-[4px] active:shadow-[2px_2px_0px_#1a1a1a] transition-all flex items-center justify-center gap-3 font-black text-xl tracking-tight uppercase",
-                    THEMES[level].bg
+                    THEMES[level].bg,
                   )}
                 >
                   <Pill className="w-6 h-6" strokeWidth={3} />
@@ -412,27 +550,41 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
           ) : null}
 
           {isStarted && !isAllComplete && nextDose ? (
-            <motion.section 
+            <motion.section
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="relative"
+              style={{ willChange: "transform, opacity" }}
             >
-              <div className={cn(
-                "p-8 rounded-[2rem] border-4 border-[#1A1A1A] dark:border-[#333] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] overflow-hidden bg-white dark:bg-[#111]"
-              )}>
+              <div
+                className={cn(
+                  "p-8 rounded-[2rem] border-4 border-[#1A1A1A] dark:border-[#333] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] overflow-hidden bg-white dark:bg-[#111]",
+                )}
+              >
                 {/* Decorative intense background shape */}
-                <div className={cn("absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-[0.15] pointer-events-none", THEMES[level].bg)} />
-                
+                <div
+                  className={cn(
+                    "absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl opacity-[0.15] pointer-events-none",
+                    THEMES[level].bg,
+                  )}
+                />
+
                 <div className="flex justify-between items-end relative z-10">
                   <div>
-                    <p className={cn("font-sans text-[10px] font-black uppercase tracking-widest mb-3", THEMES[level].text)}>
-                      Next Dose • {nextDose.portions} Pill{nextDose.portions > 1 ? 's' : ''}
+                    <p
+                      className={cn(
+                        "font-sans text-[10px] font-black uppercase tracking-widest mb-3",
+                        THEMES[level].text,
+                      )}
+                    >
+                      Next Dose • {nextDose.portions} Pill
+                      {nextDose.portions > 1 ? "s" : ""}
                     </p>
                     <h2 className="font-serif text-6xl font-black tracking-tighter tabular-nums leading-none">
                       {nextDose.timeLabel}
                     </h2>
                   </div>
-                  
+
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => completeStep(nextDose.doseNumber)}
@@ -440,7 +592,8 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                     className={cn(
                       "w-20 h-20 rounded-full flex items-center justify-center border-4 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:shadow-[0px_0px_0px_#1a1a1a] active:translate-y-1 transition-all text-white",
                       THEMES[level].bg,
-                      !!animatingStep && "opacity-50 pointer-events-none scale-95"
+                      !!animatingStep &&
+                        "opacity-50 pointer-events-none scale-95",
                     )}
                   >
                     <Check className="w-10 h-10" strokeWidth={4} />
@@ -451,15 +604,26 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                   {animatingStep?.step === nextDose.doseNumber ? (
                     <motion.div
                       initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
-                      animate={{ scale: 1.2, opacity: 1, rotate: Math.random() * 20 - 10 }}
+                      animate={{
+                        scale: 1.2,
+                        opacity: 1,
+                        rotate: Math.random() * 20 - 10,
+                      }}
                       exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)" }}
-                      transition={{ type: "spring", damping: 12, stiffness: 200 }}
+                      transition={{
+                        type: "spring",
+                        damping: 12,
+                        stiffness: 200,
+                      }}
                       className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-sm"
+                      style={{ willChange: "transform, opacity, filter" }}
                     >
-                      <div className={cn(
-                        "px-6 py-3 rounded-2xl border-4 border-[#1A1A1A] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] text-white rotate-[-5deg]",
-                        THEMES[level].bg
-                      )}>
+                      <div
+                        className={cn(
+                          "px-6 py-3 rounded-2xl border-4 border-[#1A1A1A] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] text-white rotate-[-5deg]",
+                          THEMES[level].bg,
+                        )}
+                      >
                         <h3 className="font-serif text-4xl font-black tracking-tighter uppercase whitespace-nowrap">
                           {animatingStep.word}
                         </h3>
@@ -468,7 +632,7 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                   ) : null}
                 </AnimatePresence>
               </div>
-              
+
               <div className="flex justify-between items-center mt-6 px-2">
                 <span className="font-sans font-bold text-[10px] tracking-widest uppercase opacity-50">
                   Daily Progress
@@ -481,33 +645,61 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
           ) : null}
 
           {isAllComplete ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="relative p-8 rounded-[2rem] border-4 border-[#1A1A1A] bg-[#00FF66] text-[#1A1A1A] shadow-[8px_8px_0px_#1a1a1a] text-center overflow-hidden"
+              style={{ willChange: "transform, opacity" }}
             >
               {/* Background rays for completion */}
               <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-[150%] aspect-square" style={{ background: "conic-gradient(transparent 0deg, #1A1A1A 90deg, transparent 180deg, #1A1A1A 270deg, transparent 360deg)" }} />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 20,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="w-[150%] aspect-square"
+                  style={{
+                    background:
+                      "conic-gradient(transparent 0deg, #1A1A1A 90deg, transparent 180deg, #1A1A1A 270deg, transparent 360deg)",
+                    willChange: "transform",
+                  }}
+                />
               </div>
-              
+
               <div className="relative z-10">
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1, rotate: [0, -10, 10, -5, 5, 0] }}
-                  transition={{ 
+                  transition={{
                     scale: { type: "spring", stiffness: 200, damping: 10 },
-                    rotate: { type: "keyframes", duration: 0.5, ease: "easeInOut" }
+                    rotate: {
+                      type: "keyframes",
+                      duration: 0.5,
+                      ease: "easeInOut",
+                    },
                   }}
                   className="w-24 h-24 mx-auto border-4 border-[#1A1A1A] bg-white rounded-full flex items-center justify-center mb-6 shadow-[4px_4px_0px_#1a1a1a]"
+                  style={{ willChange: "transform" }}
                 >
                   <Check className="w-12 h-12" strokeWidth={4} />
                 </motion.div>
-                <h2 className="font-serif text-4xl font-black tracking-tighter mb-3 leading-none">Protocol<br/>Complete.</h2>
+                <h2 className="font-serif text-4xl font-black tracking-tighter mb-3 leading-none">
+                  Protocol
+                  <br />
+                  Complete.
+                </h2>
                 <p className="font-sans font-bold text-[12px] uppercase tracking-widest opacity-80 bg-[#1A1A1A]/10 py-2 px-4 rounded-xl inline-block mt-2 border-2 border-[#1A1A1A]/20">
-                  {COMPLETION_MESSAGES[Math.floor(completedSteps[1] || 0) % COMPLETION_MESSAGES.length]}
+                  {
+                    COMPLETION_MESSAGES[
+                      Math.floor(completedSteps[1] || 0) %
+                        COMPLETION_MESSAGES.length
+                    ]
+                  }
                 </p>
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -528,21 +720,29 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                   onClick={() => setShowFullSchedule(!showFullSchedule)}
                   className="font-sans font-bold text-[10px] uppercase tracking-widest opacity-50 hover:opacity-100 flex items-center gap-2 transition-opacity"
                 >
-                  {showFullSchedule ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showFullSchedule ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                   {showFullSchedule ? "Hide Stack" : "Show Stack"}
                 </button>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={toggleNotifications}
                     className={cn(
                       "p-3 rounded-[1rem] border-2 transition-all active:scale-90",
-                      notificationsEnabled 
-                        ? "border-[#1A1A1A] bg-[#1A1A1A] text-white dark:border-[#F4F4F0] dark:bg-[#F4F4F0] dark:text-[#1A1A1A]" 
-                        : "border-[#1A1A1A]/20 dark:border-white/20 opacity-50 hover:opacity-100"
+                      notificationsEnabled
+                        ? "border-[#1A1A1A] bg-[#1A1A1A] text-white dark:border-[#F4F4F0] dark:bg-[#F4F4F0] dark:text-[#1A1A1A]"
+                        : "border-[#1A1A1A]/20 dark:border-white/20 opacity-50 hover:opacity-100",
                     )}
                   >
-                    {notificationsEnabled ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                    {notificationsEnabled ? (
+                      <BellRing className="w-4 h-4" />
+                    ) : (
+                      <Bell className="w-4 h-4" />
+                    )}
                   </button>
                   <button
                     onClick={handleReset}
@@ -555,7 +755,7 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
 
               <AnimatePresence>
                 {showFullSchedule ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -566,33 +766,65 @@ export default function AppClient({ initialLevel, initialTime }: { initialLevel:
                       const isNext = nextDose?.doseNumber === dose.doseNumber;
                       // Stacking effect calculations
                       const reverseIndex = schedule.length - index;
-                      
+
                       return (
                         <motion.div
                           key={dose.doseNumber}
                           initial={{ opacity: 0, y: 50 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 25 }}
+                          transition={{
+                            delay: index * 0.05,
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 25,
+                          }}
                           className={cn(
                             "relative p-5 rounded-[1.5rem] border-4 transition-all duration-500 flex items-center justify-between -mt-6 first:mt-0",
-                            isNext ? cn("z-30 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] bg-white dark:bg-[#111] scale-100") :
-                            isCompleted ? "z-10 border-[#1A1A1A]/10 dark:border-white/10 bg-[#F4F4F0] dark:bg-[#0A0A0A] scale-[0.92] opacity-40 hover:opacity-70" :
-                            "z-20 border-[#1A1A1A] dark:border-[#333] bg-white dark:bg-[#151515] scale-[0.96] shadow-[2px_2px_0px_#1a1a1a] dark:shadow-[2px_2px_0px_#000]"
+                            isNext
+                              ? cn(
+                                  "z-30 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] bg-white dark:bg-[#111] scale-100",
+                                )
+                              : isCompleted
+                                ? "z-10 border-[#1A1A1A]/10 dark:border-white/10 bg-[#F4F4F0] dark:bg-[#0A0A0A] scale-[0.92] opacity-40 hover:opacity-70"
+                                : "z-20 border-[#1A1A1A] dark:border-[#333] bg-white dark:bg-[#151515] scale-[0.96] shadow-[2px_2px_0px_#1a1a1a] dark:shadow-[2px_2px_0px_#000]",
                           )}
-                          style={{ zIndex: isNext ? 50 : reverseIndex }}
+                          style={{
+                            zIndex: isNext ? 50 : reverseIndex,
+                            willChange: "transform, opacity",
+                          }}
                         >
                           <div className="flex items-center gap-4">
-                            <div className={cn(
-                              "w-12 h-12 rounded-full border-4 flex items-center justify-center font-black text-lg",
-                              isCompleted ? "border-transparent bg-[#1A1A1A]/10 dark:bg-white/10 text-transparent" :
-                              isNext ? cn("border-[#1A1A1A] dark:border-transparent text-white", THEMES[level].bg) :
-                              "border-[#1A1A1A] dark:border-[#555] text-[#1A1A1A] dark:text-white"
-                            )}>
-                              {isCompleted ? <Check className="w-5 h-5 text-[#1A1A1A] dark:text-white" strokeWidth={4} /> : dose.portions}
+                            <div
+                              className={cn(
+                                "w-12 h-12 rounded-full border-4 flex items-center justify-center font-black text-lg",
+                                isCompleted
+                                  ? "border-transparent bg-[#1A1A1A]/10 dark:bg-white/10 text-transparent"
+                                  : isNext
+                                    ? cn(
+                                        "border-[#1A1A1A] dark:border-transparent text-white",
+                                        THEMES[level].bg,
+                                      )
+                                    : "border-[#1A1A1A] dark:border-[#555] text-[#1A1A1A] dark:text-white",
+                              )}
+                            >
+                              {isCompleted ? (
+                                <Check
+                                  className="w-5 h-5 text-[#1A1A1A] dark:text-white"
+                                  strokeWidth={4}
+                                />
+                              ) : (
+                                dose.portions
+                              )}
                             </div>
                             <div>
-                              <span className="font-serif text-2xl font-black tabular-nums tracking-tighter">{dose.timeLabel}</span>
-                              {dose.isNextDay ? <span className="ml-3 font-sans text-[9px] font-black bg-[#1A1A1A] text-white px-2 py-0.5 rounded-full uppercase tracking-widest">+1D</span> : null}
+                              <span className="font-serif text-2xl font-black tabular-nums tracking-tighter">
+                                {dose.timeLabel}
+                              </span>
+                              {dose.isNextDay ? (
+                                <span className="ml-3 font-sans text-[9px] font-black bg-[#1A1A1A] text-white px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                  +1D
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                           {isCompleted ? (
