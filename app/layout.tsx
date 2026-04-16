@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  axes: ["SOFT", "WONK", "opsz"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
@@ -16,6 +17,7 @@ export const viewport: Viewport = {
   themeColor: "#050505",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1, // Prevent zoom on mobile inputs
 };
 
 export const metadata: Metadata = {
@@ -42,9 +44,11 @@ export default function RootLayout({
     <html
       lang="en"
       style={{ colorScheme: "dark" }}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${fraunces.variable} ${dmSans.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col touch-manipulation overscroll-none">{children}</body>
+      <body className="font-sans min-h-full flex flex-col touch-manipulation overscroll-none bg-[#F4F4F0] dark:bg-[#0A0A0A] selection:bg-pink-500 selection:text-white">
+        {children}
+      </body>
     </html>
   );
 }
