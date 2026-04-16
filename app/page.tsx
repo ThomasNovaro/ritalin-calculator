@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PlayfulToast } from "./components/PlayfulToast";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -299,7 +300,7 @@ function AppContent() {
 
   useEffect(() => {
     if (cheerMsg) {
-      const timer = setTimeout(() => setCheerMsg(null), 2500);
+      const timer = setTimeout(() => setCheerMsg(null), 1200);
       return () => clearTimeout(timer);
     }
   }, [cheerMsg]);
@@ -848,36 +849,11 @@ function AppContent() {
       {/* CHEER OVERLAY */}
       <AnimatePresence>
         {cheerMsg && (
-          <motion.div
+          <PlayfulToast
             key={cheerMsg.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 15,
-              }}
-              className="bg-panel border border-border-theme px-12 py-8 text-center"
-            >
-              <p className={`text-6xl font-light tracking-wide ${theme.textClass} mb-3`}>
-                {cheerMsg.text}
-              </p>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-                className={`text-6xl ${theme.textClass}`}
-              >
-                ✓
-              </motion.div>
-            </motion.div>
-          </motion.div>
+            word={cheerMsg.text}
+            themeColorClass={theme.bgClass}
+          />
         )}
       </AnimatePresence>
     </main>

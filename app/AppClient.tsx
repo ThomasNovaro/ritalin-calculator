@@ -16,13 +16,15 @@ import {
 } from "lucide-react";
 import {
   LazyMotion,
-  domAnimation,
+  domMax,
   m as motion,
   AnimatePresence,
+  LayoutGroup,
 } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dynamic from "next/dynamic";
+import { PlayfulToast } from "./components/PlayfulToast";
 
 const CutoffModal = dynamic(() => import("./components/CutoffModal"), {
   ssr: false,
@@ -255,7 +257,7 @@ export default function AppClient({
         return next;
       });
       setAnimatingStep(null);
-    }, 1200);
+    }, 1000);
   };
 
   const setNow = () => {
@@ -452,8 +454,9 @@ export default function AppClient({
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="relative min-h-[100dvh] pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] overflow-x-hidden font-sans bg-[#F4F4F0] dark:bg-[#0A0A0A] text-[#1A1A1A] dark:text-[#F4F4F0] antialiased selection:bg-[#FF5E00] selection:text-white">
+    <LazyMotion features={domMax}>
+      <LayoutGroup>
+        <div className="relative min-h-[100dvh] pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] overflow-x-hidden font-sans bg-[#F4F4F0] dark:bg-[#0A0A0A] text-[#1A1A1A] dark:text-[#F4F4F0] antialiased selection:bg-[#FF5E00] selection:text-white">
         {/* Background glow based on level */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex justify-center items-start">
           <div
@@ -467,6 +470,13 @@ export default function AppClient({
         <AnimatePresence>
           {showCutoffModal ? (
             <CutoffModal onClose={() => setShowCutoffModal(false)} />
+          ) : null}
+          {animatingStep ? (
+            <PlayfulToast
+              key={`toast-${animatingStep.step}`}
+              word={animatingStep.word}
+              themeColorClass={THEMES[level].bg}
+            />
           ) : null}
         </AnimatePresence>
 
@@ -626,52 +636,27 @@ export default function AppClient({
                     </h2>
                   </div>
 
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => completeStep(nextDose.doseNumber)}
-                    disabled={!!animatingStep}
-                    className={cn(
-                      "w-20 h-20 rounded-full flex items-center justify-center border-4 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:shadow-[0px_0px_0px_#1a1a1a] active:translate-y-1 transition-all text-white",
-                      THEMES[level].bg,
-                      !!animatingStep &&
-                        "opacity-50 pointer-events-none scale-95",
-                    )}
-                  >
-                    <Check className="w-10 h-10" strokeWidth={4} />
-                  </motion.button>
+                  <div className="w-20 h-20 relative">
+                    <AnimatePresence>
+                      {animatingStep?.step !== nextDose.doseNumber && (
+                        <motion.button
+                          layoutId={`dose-action-${nextDose.doseNumber}`}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => completeStep(nextDose.doseNumber)}
+                          className={cn(
+                            "absolute inset-0 rounded-[2rem] flex items-center justify-center border-4 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:shadow-[0px_0px_0px_#1a1a1a] active:translate-y-1 transition-all text-white",
+                            THEMES[level].bg,
+                          )}
+                          transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                        >
+                          <motion.div layoutId={`dose-icon-${nextDose.doseNumber}`}>
+                            <Check className="w-10 h-10" strokeWidth={4} />
+                          </motion.div>
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-
-                <AnimatePresence>
-                  {animatingStep?.step === nextDose.doseNumber ? (
-                    <motion.div
-                      initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
-                      animate={{
-                        scale: 1.2,
-                        opacity: 1,
-                        rotate: Math.random() * 20 - 10,
-                      }}
-                      exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)" }}
-                      transition={{
-                        type: "spring",
-                        damping: 12,
-                        stiffness: 200,
-                      }}
-                      className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 dark:bg-black/80 backdrop-blur-sm"
-                      style={{ willChange: "transform, opacity, filter" }}
-                    >
-                      <div
-                        className={cn(
-                          "px-6 py-3 rounded-2xl border-4 border-[#1A1A1A] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] text-white rotate-[-5deg]",
-                          THEMES[level].bg,
-                        )}
-                      >
-                        <h3 className="font-serif text-4xl font-black tracking-tighter uppercase whitespace-nowrap">
-                          {animatingStep.word}
-                        </h3>
-                      </div>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
               </div>
 
               <div className="flex justify-between items-center mt-6 px-2">
@@ -883,6 +868,7 @@ export default function AppClient({
           ) : null}
         </main>
       </div>
+      </LayoutGroup>
     </LazyMotion>
   );
 }
