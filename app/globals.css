@@ -1,13 +1,50 @@
 @import "tailwindcss";
 
 :root {
+  --background: #F4F4F0;
+  --foreground: #000000;
+  --panel: #FFFFFF;
+  --border-theme: #000000;
+  --subtext: #666666;
+  --surface: #E8E8E4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #ffffff;
+    --panel: #111111;
+    --border-theme: #333333;
+    --subtext: #888888;
+    --surface: #222222;
+  }
+}
+
+:root[data-theme="dark"] {
   --background: #000000;
   --foreground: #ffffff;
+  --panel: #111111;
+  --border-theme: #333333;
+  --subtext: #888888;
+  --surface: #222222;
+}
+
+:root[data-theme="light"] {
+  --background: #F4F4F0;
+  --foreground: #000000;
+  --panel: #FFFFFF;
+  --border-theme: #000000;
+  --subtext: #666666;
+  --surface: #E8E8E4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-border-theme: var(--border-theme);
+  --color-subtext: var(--subtext);
+  --color-surface: var(--surface);
   --font-sans: var(--font-anton);
   --font-mono: var(--font-azeret);
 }
@@ -16,7 +53,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-mono), monospace;
-  color-scheme: dark;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .noise-bg {
