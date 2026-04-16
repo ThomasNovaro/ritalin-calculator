@@ -113,7 +113,7 @@ function HoldButton({
       onPointerLeave={handleEnd}
       onPointerCancel={handleEnd}
       disabled={disabled}
-      className={`relative w-full h-24 border border-border-theme overflow-hidden flex items-center justify-center tracking-wide text-base transition-all duration-100 ease-in-out ${
+      className={`relative w-full h-24 border border-border-theme overflow-hidden flex items-center justify-center tracking-wide text-base transition-all duration-100 ease-in-out select-none ${
         disabled
           ? "opacity-50 cursor-not-allowed bg-surface text-disabled"
           : completed
