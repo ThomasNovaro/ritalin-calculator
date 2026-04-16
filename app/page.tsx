@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { RotateCcw, Power, Zap, AlertCircle, Undo, Clock } from "lucide-react";
+import {
+  RotateCcw,
+  Power,
+  Zap,
+  AlertCircle,
+  Undo,
+  Clock,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -90,7 +98,7 @@ function HoldButton({
       onComplete();
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Success vibration
       setTimeout(() => setCompleted(false), 1000);
-    }, 1500);
+    }, 800);
   };
 
   const handleEnd = (e: React.PointerEvent | React.TouchEvent) => {
@@ -122,7 +130,7 @@ function HoldButton({
           style={{
             width: holding ? "100%" : "0%",
             transitionProperty: "width",
-            transitionDuration: holding ? "1500ms" : "100ms",
+            transitionDuration: holding ? "800ms" : "100ms",
             transitionTimingFunction: holding ? "linear" : "ease-out",
           }}
         />
@@ -159,6 +167,9 @@ function AppContent() {
   const [customTimeInput, setCustomTimeInput] = useState("");
   const [acknowledgedCutoff, setAcknowledgedCutoff] = useState(false);
   const [quote, setQuote] = useState("");
+  const [cheerMsg, setCheerMsg] = useState<{ text: string; id: number } | null>(
+    null,
+  );
 
   const updateUrl = useCallback(
     (newLevel: Level, newTime: string) => {
@@ -271,7 +282,27 @@ function AppContent() {
     if (completedSteps[step]) return;
     const timeToLog = customTimeMs ?? new Date().getTime();
     setCompletedSteps((prev) => ({ ...prev, [step]: timeToLog }));
+
+    const cheers = [
+      "You've got this!",
+      "Crushing it!",
+      "Keep shining!",
+      "Unstoppable!",
+      "Stay strong!",
+      "Victory secured!",
+    ];
+    setCheerMsg({
+      text: cheers[Math.floor(Math.random() * cheers.length)],
+      id: Date.now(),
+    });
   };
+
+  useEffect(() => {
+    if (cheerMsg) {
+      const timer = setTimeout(() => setCheerMsg(null), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [cheerMsg]);
 
   const setNow = () => {
     const now = new Date();
@@ -814,6 +845,41 @@ function AppContent() {
           </div>
         </div>
       )}
+      {/* CHEER OVERLAY */}
+      <AnimatePresence>
+        {cheerMsg && (
+          <motion.div
+            key={cheerMsg.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 15,
+              }}
+              className="bg-panel border border-border-theme px-12 py-8 text-center"
+            >
+              <p className={`text-6xl font-light tracking-wide ${theme.textClass} mb-3`}>
+                {cheerMsg.text}
+              </p>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                className={`text-6xl ${theme.textClass}`}
+              >
+                ✓
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
