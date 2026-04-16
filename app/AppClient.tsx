@@ -151,7 +151,7 @@ export default function AppClient({
   } | null>(null);
   const [showFullSchedule, setShowFullSchedule] = useState(true);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -207,11 +207,11 @@ export default function AppClient({
       } catch (e) {}
     }
 
-    if (
-      savedNotifs === "true" &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
+    if (savedNotifs === "false") {
+      setNotificationsEnabled(false);
+    } else if ("Notification" in window && Notification.permission === "granted") {
+      setNotificationsEnabled(true);
+    } else {
       setNotificationsEnabled(true);
     }
   }, [initialTime, updateUrl]);
@@ -273,6 +273,25 @@ export default function AppClient({
       localStorage.setItem("pokeMed_completedSteps_v2", JSON.stringify(next));
       return next;
     });
+
+    if (
+      notificationsEnabled &&
+      "Notification" in window &&
+      Notification.permission !== "granted" &&
+      Notification.permission !== "denied"
+    ) {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          sendNotification("Notifications Enabled! 🔔", {
+            body: "You will now receive alerts for your schedule. Keep the app open in the background to receive timely reminders.",
+            icon: "/icon",
+          });
+        } else {
+          setNotificationsEnabled(false);
+          localStorage.setItem("pokeMed_notifications", "false");
+        }
+      });
+    }
   };
 
   const toggleNotifications = async () => {
