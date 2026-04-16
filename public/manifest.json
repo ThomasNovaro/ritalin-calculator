@@ -1,11 +1,11 @@
 {
-  "name": "PokéMed: Ritalin Edition",
-  "short_name": "PokéMed",
-  "description": "Stateless daily schedule calculator",
+  "name": "dose | protocol",
+  "short_name": "dose",
+  "description": "dosage calculator",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
   "icons": [
     {
       "src": "/icon",
