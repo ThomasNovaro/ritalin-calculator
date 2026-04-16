@@ -1,37 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-});
-
 export const viewport: Viewport = {
-  themeColor: "#050505",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f0e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+  ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // Prevent zoom on mobile inputs
+  maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
-  title: "PokéMed: Ritalin Edition",
-  description: "Stateless daily schedule calculator",
+  title: "dose | protocol",
+  description: "dosage calculator",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "PokéMed",
+    title: "dose",
     statusBarStyle: "black-translucent",
   },
-  applicationName: "PokéMed",
+  applicationName: "dose",
   formatDetection: {
     telephone: false,
   },
@@ -45,10 +35,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      style={{ colorScheme: "dark" }}
-      className={`${fraunces.variable} ${dmSans.variable} h-full antialiased dark`}
+      className="h-full antialiased"
     >
-      <body className="font-sans min-h-full flex flex-col touch-manipulation overscroll-none bg-[#F4F4F0] dark:bg-[#0A0A0A] selection:bg-pink-500 selection:text-white">
+      <body className="min-h-full flex flex-col touch-manipulation overscroll-none selection:bg-foreground selection:text-background lowercase">
         {children}
       </body>
     </html>
