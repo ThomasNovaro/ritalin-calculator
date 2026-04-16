@@ -415,7 +415,7 @@ function AppContent() {
             <div className="space-y-4">
               <label className="font-serif text-2xl font-black tracking-tight block">First Intake Time</label>
               <div className="flex gap-3">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none opacity-40">
                     <Clock className="w-5 h-5" strokeWidth={3} />
                   </div>
@@ -423,12 +423,12 @@ function AppContent() {
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full pl-14 pr-4 py-5 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-white dark:bg-[#151515] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_#1a1a1a] transition-all font-serif text-2xl font-black tabular-nums"
+                    className="w-full pl-12 pr-2 py-5 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-white dark:bg-[#151515] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_#1a1a1a] transition-all font-serif text-xl sm:text-2xl font-black tabular-nums"
                   />
                 </div>
                 <button
                   onClick={setNow}
-                  className="px-6 py-5 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-[#1A1A1A] dark:bg-[#F4F4F0] text-[#F4F4F0] dark:text-[#1A1A1A] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:translate-y-[2px] active:shadow-[2px_2px_0px_#1a1a1a] transition-all font-black uppercase tracking-widest text-xs"
+                  className="flex-shrink-0 px-5 sm:px-6 py-5 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-[#1A1A1A] dark:bg-[#F4F4F0] text-[#F4F4F0] dark:text-[#1A1A1A] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:translate-y-[2px] active:shadow-[2px_2px_0px_#1a1a1a] transition-all font-black uppercase tracking-widest text-xs"
                 >
                   Now
                 </button>
