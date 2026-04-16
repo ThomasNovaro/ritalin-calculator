@@ -385,7 +385,7 @@ function AppContent() {
           <motion.section layout className="space-y-8">
             <div className="space-y-4">
               <h2 className="font-serif text-2xl font-black tracking-tight">Protocol</h2>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => {
                   const isActive = level === l;
                   return (
@@ -393,19 +393,19 @@ function AppContent() {
                       key={l}
                       onClick={() => setLevel(l)}
                       className={cn(
-                        "relative flex flex-col items-center justify-center p-2 sm:p-4 min-h-[120px] sm:min-h-[140px] rounded-[1.25rem] sm:rounded-[1.5rem] border-4 transition-all duration-300 outline-none",
+                        "relative flex flex-col items-center justify-center p-4 min-h-[140px] rounded-[1.5rem] border-4 transition-all duration-300 outline-none",
                         isActive 
                           ? cn("border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] scale-100", THEMES[l].bg, "text-white z-10") 
                           : "border-[#1A1A1A]/10 dark:border-white/10 hover:border-[#1A1A1A]/30 bg-white dark:bg-[#151515] scale-[0.96] hover:scale-100 opacity-60 hover:opacity-100"
                       )}
                     >
-                      <div className="flex gap-1 mb-2 sm:mb-3">
+                      <div className="flex gap-1 mb-3">
                         {Array.from({ length: THEMES[l].intensity }).map((_, i) => (
-                          <Target key={i} className={cn("w-4 h-4 sm:w-5 sm:h-5", isActive ? "text-white" : THEMES[l].text)} strokeWidth={3} />
+                          <Target key={i} className={cn("w-5 h-5", isActive ? "text-white" : THEMES[l].text)} strokeWidth={3} />
                         ))}
                       </div>
-                      <div className="font-sans font-black text-[8px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest">{l}</div>
-                      <div className="font-sans text-[7px] sm:text-[8px] font-bold opacity-70 uppercase tracking-wide sm:tracking-widest mt-1 sm:mt-2 line-clamp-2">{THEMES[l].label}</div>
+                      <div className="font-sans font-black text-[10px] uppercase tracking-widest">{l}</div>
+                      <div className="font-sans text-[8px] font-bold opacity-70 uppercase tracking-widest mt-2">{THEMES[l].label}</div>
                     </button>
                   );
                 })}
