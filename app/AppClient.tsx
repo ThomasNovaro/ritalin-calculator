@@ -72,23 +72,23 @@ const THEMES: Record<
   { bg: string; text: string; border: string; intensity: number; label: string }
 > = {
   Charmander: {
-    bg: "bg-[#FF5E00]",
-    text: "text-[#FF5E00]",
-    border: "border-[#FF5E00]",
+    bg: "bg-[#FB8F02]",
+    text: "text-[#FB8F02]",
+    border: "border-[#FB8F02]",
     intensity: 1,
     label: "Soft Focus",
   },
   Charmeleon: {
-    bg: "bg-[#FF0055]",
-    text: "text-[#FF0055]",
-    border: "border-[#FF0055]",
+    bg: "bg-[#F01A2E]",
+    text: "text-[#F01A2E]",
+    border: "border-[#F01A2E]",
     intensity: 2,
     label: "Deep Work",
   },
   Charizard: {
-    bg: "bg-[#7000FF]",
-    text: "text-[#7000FF]",
-    border: "border-[#7000FF]",
+    bg: "bg-[#95139C]",
+    text: "text-[#95139C]",
+    border: "border-[#95139C]",
     intensity: 3,
     label: "Overdrive",
   },

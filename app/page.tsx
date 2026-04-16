@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import {
-  RotateCcw,
-  Power,
-  Zap,
-  AlertCircle,
-  Undo,
-} from "lucide-react";
+import { RotateCcw, Power, Zap, AlertCircle, Undo, Clock } from "lucide-react";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -40,25 +34,25 @@ const THEMES: Record<
   }
 > = {
   Charmander: {
-    color: "#1aa167",
-    bgClass: "bg-[#1aa167]",
-    textClass: "text-[#1aa167]",
-    borderClass: "border-[#1aa167]",
-    fillClass: "bg-[#1aa167]",
+    color: "#FB8F02",
+    bgClass: "bg-[#FB8F02]",
+    textClass: "text-[#FB8F02]",
+    borderClass: "border-[#FB8F02]",
+    fillClass: "bg-[#FB8F02]",
   },
   Charmeleon: {
-    color: "#1270b8",
-    bgClass: "bg-[#1270b8]",
-    textClass: "text-[#1270b8]",
-    borderClass: "border-[#1270b8]",
-    fillClass: "bg-[#1270b8]",
+    color: "#F01A2E",
+    bgClass: "bg-[#F01A2E]",
+    textClass: "text-[#F01A2E]",
+    borderClass: "border-[#F01A2E]",
+    fillClass: "bg-[#F01A2E]",
   },
   Charizard: {
-    color: "#ce2021",
-    bgClass: "bg-[#ce2021]",
-    textClass: "text-[#ce2021]",
-    borderClass: "border-[#ce2021]",
-    fillClass: "bg-[#ce2021]",
+    color: "#95139C",
+    bgClass: "bg-[#95139C]",
+    textClass: "text-[#95139C]",
+    borderClass: "border-[#95139C]",
+    fillClass: "bg-[#95139C]",
   },
 };
 
@@ -156,9 +150,13 @@ function AppContent() {
   const [completedSteps, setCompletedSteps] = useState<Record<number, number>>(
     {},
   );
-  const [notifiedDoses, setNotifiedDoses] = useState<Record<number, boolean>>({});
+  const [notifiedDoses, setNotifiedDoses] = useState<Record<number, boolean>>(
+    {},
+  );
   const [showPast, setShowPast] = useState(false);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
+  const [showCustomTimeModal, setShowCustomTimeModal] = useState(false);
+  const [customTimeInput, setCustomTimeInput] = useState("");
   const [acknowledgedCutoff, setAcknowledgedCutoff] = useState(false);
   const [quote, setQuote] = useState("");
 
@@ -255,7 +253,7 @@ function AppContent() {
     if (keys.length <= 1) return; // Don't undo dose 1 (which starts the protocol)
     const lastDoseNumber = keys[0];
 
-    if (!confirm(`undo dose ${lastDoseNumber}?`)) return;
+    if (!confirm(`undo last dose logged?`)) return;
 
     setCompletedSteps((prev) => {
       const next = { ...prev };
@@ -269,10 +267,10 @@ function AppContent() {
     });
   };
 
-  const completeStep = (step: number) => {
+  const completeStep = (step: number, customTimeMs?: number) => {
     if (completedSteps[step]) return;
-    const now = new Date().getTime();
-    setCompletedSteps((prev) => ({ ...prev, [step]: now }));
+    const timeToLog = customTimeMs ?? new Date().getTime();
+    setCompletedSteps((prev) => ({ ...prev, [step]: timeToLog }));
   };
 
   const setNow = () => {
@@ -372,14 +370,21 @@ function AppContent() {
     const delay = Math.max(0, timeUntilDose);
 
     const timeout = setTimeout(() => {
-      if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted" &&
+        "serviceWorker" in navigator
+      ) {
         navigator.serviceWorker.ready.then((registration) => {
-          registration.showNotification(`dose ${String(nextDose.doseNumber).padStart(2, '0')} ready`, {
-            body: `it is time for your next dose (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
-            vibrate: [200, 100, 200, 100, 200],
-            tag: `dose-${nextDose.doseNumber}`,
-            requireInteraction: true,
-          } as NotificationOptions);
+          registration.showNotification(
+            `dose ${String(nextDose.doseNumber).padStart(2, "0")} ready`,
+            {
+              body: `it is time for your next dose (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
+              vibrate: [200, 100, 200, 100, 200],
+              tag: `dose-${nextDose.doseNumber}`,
+              requireInteraction: true,
+            } as NotificationOptions,
+          );
         });
       }
       setNotifiedDoses((prev) => ({ ...prev, [nextDose.doseNumber]: true }));
@@ -734,13 +739,81 @@ function AppContent() {
 
       {/* BOTTOM ACTION AREA */}
       <div className="fixed bottom-8 left-0 right-0 w-full max-w-lg mx-auto px-6">
-        <HoldButton
-          onComplete={() => nextDose && completeStep(nextDose.doseNumber)}
-          theme={theme}
-          disabled={!nextDose}
-          label={nextDose ? "hold to consume" : "protocol complete"}
-        />
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <HoldButton
+              onComplete={() => nextDose && completeStep(nextDose.doseNumber)}
+              theme={theme}
+              disabled={!nextDose}
+              label={nextDose ? "hold to consume" : "protocol complete"}
+            />
+          </div>
+          {nextDose && (
+            <button
+              onClick={() => {
+                const now = new Date();
+                setCustomTimeInput(timeFormatter.format(now));
+                setShowCustomTimeModal(true);
+              }}
+              className="w-24 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-colors duration-100 ease-linear"
+            >
+              <Clock
+                className={`w-5 h-5 ${theme.textClass}`}
+                strokeWidth={1.5}
+              />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* CUSTOM TIME MODAL */}
+      {showCustomTimeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
+          <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
+            <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
+              <Clock className={`w-4 h-4 ${theme.textClass}`} strokeWidth={1} />{" "}
+              log custom time
+            </h2>
+            <div className="mb-8">
+              <input
+                type="time"
+                value={customTimeInput}
+                onChange={(e) => setCustomTimeInput(e.target.value)}
+                className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-2xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-colors duration-100 ease-linear"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCustomTimeModal(false)}
+                className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
+              >
+                cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!customTimeInput || !nextDose) return;
+                  const [hours, minutes] = customTimeInput
+                    .split(":")
+                    .map(Number);
+                  const now = new Date();
+                  const customDate = new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    now.getDate(),
+                    hours,
+                    minutes,
+                  );
+                  completeStep(nextDose.doseNumber, customDate.getTime());
+                  setShowCustomTimeModal(false);
+                }}
+                className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
+              >
+                log dose
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
