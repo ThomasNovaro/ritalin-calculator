@@ -2,36 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Clock, Target, RotateCcw, Check, Eye, EyeOff, Pill, Bell, BellRing, X, AlertCircle, Undo } from "lucide-react";
-
-// Custom SVG Pokeball Icon (Now a PokéPill!)
-const PokeballIcon = ({
-  className,
-  "aria-hidden": ariaHidden,
-}: {
-  className?: string;
-  "aria-hidden"?: boolean | "true" | "false";
-}) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden={ariaHidden}
-  >
-    <g transform="rotate(45 12 12)">
-      {/* Outer capsule shape */}
-      <rect x="7" y="3" width="10" height="18" rx="5" />
-      {/* Inner button */}
-      <circle cx="12" cy="12" r="2.5" />
-      {/* Left and right middle lines */}
-      <path d="M7 12h2.5 M14.5 12h2.5" />
-    </g>
-  </svg>
-);
+import { Clock, RotateCcw, Check, Zap, AlertCircle } from "lucide-react";
 
 type Level = "Charmander" | "Charmeleon" | "Charizard";
 
@@ -49,60 +20,27 @@ const PROTOCOLS: Record<Level, { maxDoses: number; portions: number[] }> = {
   Charizard: { maxDoses: 3, portions: [2, 2, 2] },
 };
 
-const THEMES: Record<Level, { glowBg: string; headerIconText: string; headerIconBg: string; activeBorder: string; activeBg: string; activeText: string; hoverBorder: string; ring: string; pillBg: string; pillSolidBg: string; pillBorder: string; badgeBg: string; badgeText: string; nodeBg: string; nodeText: string; intensity: number; }> = {
+const THEMES: Record<Level, { color: string; bgClass: string; textClass: string; borderClass: string; fillClass: string }> = {
   Charmander: {
-    glowBg: "from-amber-400/30 via-amber-400/10 to-transparent",
-    headerIconText: "text-amber-500 dark:text-amber-400",
-    headerIconBg: "bg-amber-100 dark:bg-amber-900/30",
-    activeBorder: "border-amber-400 dark:border-amber-500",
-    activeBg: "bg-amber-50 dark:bg-amber-900/20",
-    activeText: "text-amber-700 dark:text-amber-300",
-    hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700/50",
-    ring: "focus-visible:ring-amber-500",
-    pillBg: "bg-amber-500/20",
-    pillSolidBg: "bg-amber-500 dark:bg-amber-400",
-    pillBorder: "border-amber-500",
-    badgeBg: "bg-amber-100 dark:bg-amber-900/40",
-    badgeText: "text-amber-700 dark:text-amber-300",
-    nodeBg: "bg-amber-100 dark:bg-amber-900/30",
-    nodeText: "text-amber-600 dark:text-amber-400",
-    intensity: 1,
+    color: "#ffbf00",
+    bgClass: "bg-[#ffbf00]",
+    textClass: "text-[#ffbf00]",
+    borderClass: "border-[#ffbf00]",
+    fillClass: "bg-[#ffbf00]",
   },
   Charmeleon: {
-    glowBg: "from-orange-400/30 via-orange-400/10 to-transparent",
-    headerIconText: "text-orange-500 dark:text-orange-400",
-    headerIconBg: "bg-orange-100 dark:bg-orange-900/30",
-    activeBorder: "border-orange-400 dark:border-orange-500",
-    activeBg: "bg-orange-50 dark:bg-orange-900/20",
-    activeText: "text-orange-700 dark:text-orange-300",
-    hoverBorder: "hover:border-orange-300 dark:hover:border-orange-700/50",
-    ring: "focus-visible:ring-orange-500",
-    pillBg: "bg-orange-500/20",
-    pillSolidBg: "bg-orange-500 dark:bg-orange-400",
-    pillBorder: "border-orange-500",
-    badgeBg: "bg-orange-100 dark:bg-orange-900/40",
-    badgeText: "text-orange-700 dark:text-orange-300",
-    nodeBg: "bg-orange-100 dark:bg-orange-900/30",
-    nodeText: "text-orange-600 dark:text-orange-400",
-    intensity: 2,
+    color: "#ff5100",
+    bgClass: "bg-[#ff5100]",
+    textClass: "text-[#ff5100]",
+    borderClass: "border-[#ff5100]",
+    fillClass: "bg-[#ff5100]",
   },
   Charizard: {
-    glowBg: "from-red-400/30 via-red-400/10 to-transparent",
-    headerIconText: "text-red-500 dark:text-red-400",
-    headerIconBg: "bg-red-100 dark:bg-red-900/30",
-    activeBorder: "border-red-400 dark:border-red-500",
-    activeBg: "bg-red-50 dark:bg-red-900/20",
-    activeText: "text-red-700 dark:text-red-300",
-    hoverBorder: "hover:border-red-300 dark:hover:border-red-700/50",
-    ring: "focus-visible:ring-red-500",
-    pillBg: "bg-red-500/20",
-    pillSolidBg: "bg-red-500 dark:bg-red-400",
-    pillBorder: "border-red-500",
-    badgeBg: "bg-red-100 dark:bg-red-900/40",
-    badgeText: "text-red-700 dark:text-red-300",
-    nodeBg: "bg-red-100 dark:bg-red-900/30",
-    nodeText: "text-red-600 dark:text-red-400",
-    intensity: 3,
+    color: "#ff003c",
+    bgClass: "bg-[#ff003c]",
+    textClass: "text-[#ff003c]",
+    borderClass: "border-[#ff003c]",
+    fillClass: "bg-[#ff003c]",
   },
 };
 
@@ -112,28 +50,88 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour12: false,
 });
 
+// -- Custom Hold Button --
+function HoldButton({ 
+  onComplete, 
+  theme, 
+  label = "HOLD TO CONSUME",
+  disabled = false
+}: { 
+  onComplete: () => void; 
+  theme: typeof THEMES[Level]; 
+  label?: string;
+  disabled?: boolean;
+}) {
+  const [holding, setHolding] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleStart = (e: React.PointerEvent | React.TouchEvent) => {
+    // e.preventDefault();
+    if (disabled || completed) return;
+    setHolding(true);
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    timerRef.current = setTimeout(() => {
+      setHolding(false);
+      setCompleted(true);
+      onComplete();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Success vibration
+      setTimeout(() => setCompleted(false), 1000);
+    }, 1500);
+  };
+
+  const handleEnd = (e: React.PointerEvent | React.TouchEvent) => {
+    // e.preventDefault();
+    if (disabled || completed) return;
+    setHolding(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  return (
+    <button
+      onPointerDown={handleStart}
+      onPointerUp={handleEnd}
+      onPointerLeave={handleEnd}
+      onPointerCancel={handleEnd}
+      disabled={disabled}
+      className={`relative w-full h-24 border-t border-[#333] overflow-hidden flex items-center justify-center uppercase tracking-widest text-lg font-bold transition-colors ${
+        disabled ? 'opacity-30 cursor-not-allowed bg-black text-[#666]' : 
+        completed ? 'bg-white text-black' : 'bg-black text-white hover:bg-[#111]'
+      }`}
+      style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
+    >
+      {!disabled && !completed && (
+        <div
+          className={`absolute left-0 top-0 bottom-0 ${theme.bgClass}`}
+          style={{
+            width: holding ? "100%" : "0%",
+            transitionProperty: "width",
+            transitionDuration: holding ? "1500ms" : "300ms",
+            transitionTimingFunction: holding ? "linear" : "ease-out",
+          }}
+        />
+      )}
+      <span className={`relative z-10 ${holding ? 'text-black' : ''} transition-colors duration-100`}>
+        {completed ? "DOSE LOGGED" : holding ? "HOLDING..." : label}
+      </span>
+    </button>
+  );
+}
+
 function AppContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // URL state
   const urlLevel = (searchParams.get("level") as Level) || "Charmander";
   const urlTime = searchParams.get("time") || "";
 
   const [level, setLevelState] = useState<Level>(urlLevel);
   const [startTime, setStartTimeState] = useState<string>(urlTime);
   const [mounted, setMounted] = useState(false);
-  // Key: doseNumber, Value: actual timestamp when taken
   const [completedSteps, setCompletedSteps] = useState<Record<number, number>>({});
-  const [animatingStep, setAnimatingStep] = useState<number | null>(null);
-  const [showFullSchedule, setShowFullSchedule] = useState(false);
-  const [showCutoffModal, setShowCutoffModal] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Sync state cleanly
+  
   const updateUrl = useCallback((newLevel: Level, newTime: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("level", newLevel);
@@ -157,7 +155,6 @@ function AppContent() {
 
   useEffect(() => {
     setMounted(true);
-    // Initial sync from local storage if URL is empty (hydration logic)
     if (!urlTime) {
       const savedTime = localStorage.getItem("pokeMed_startTime");
       const savedLevel = localStorage.getItem("pokeMed_level") as Level | null;
@@ -172,18 +169,12 @@ function AppContent() {
     }
 
     const savedSteps = localStorage.getItem("pokeMed_completedSteps_v2");
-    const savedNotifs = localStorage.getItem("pokeMed_notifications");
-
     if (savedSteps) {
       try {
         setCompletedSteps(JSON.parse(savedSteps));
       } catch (e) {}
     }
-
-    if (savedNotifs === "true" && "Notification" in window && Notification.permission === "granted") {
-      setNotificationsEnabled(true);
-    }
-  }, []); // Only run once on mount
+  }, []);
 
   useEffect(() => {
     if (mounted && startTime) {
@@ -199,47 +190,24 @@ function AppContent() {
   }, [completedSteps, mounted]);
 
   const handleReset = () => {
+    if (!confirm("RESET PROTOCOL?")) return;
     setStartTime("");
     setLevel("Charmander");
     setCompletedSteps({});
-    setShowFullSchedule(false);
     localStorage.removeItem("pokeMed_startTime");
     localStorage.removeItem("pokeMed_level");
     localStorage.removeItem("pokeMed_completedSteps_v2");
-    localStorage.removeItem("pokeMed_cutoffModalShown");
-  };
-
-  const handleUndo = () => {
-    setCompletedSteps((prev) => {
-      const keys = Object.keys(prev).map(Number);
-      if (keys.length === 0) return prev;
-      const maxKey = Math.max(...keys);
-      const newState = { ...prev };
-      delete newState[maxKey];
-      return newState;
-    });
   };
 
   const completeStep = (step: number) => {
-    if (animatingStep !== null || completedSteps[step]) return;
-    setAnimatingStep(step);
-
+    if (completedSteps[step]) return;
     const now = new Date().getTime();
-
-    setTimeout(() => {
-      setCompletedSteps((prev) => ({ ...prev, [step]: now }));
-      setAnimatingStep(null);
-    }, 600);
-  };
-
-  const handleTimeChange = (newTime: string) => {
-    setStartTime(newTime);
+    setCompletedSteps((prev) => ({ ...prev, [step]: now }));
   };
 
   const setNow = () => {
     const now = new Date();
-    const formatted = timeFormatter.format(now);
-    setStartTime(formatted);
+    setStartTime(timeFormatter.format(now));
   };
 
   const startSchedule = () => {
@@ -247,33 +215,7 @@ function AppContent() {
     const [hoursStr, minutesStr] = startTime.split(":");
     const now = new Date();
     now.setHours(parseInt(hoursStr, 10), parseInt(minutesStr, 10), 0, 0);
-    
     setCompletedSteps((prev) => ({ ...prev, [1]: now.getTime() }));
-  };
-
-  const toggleNotifications = async () => {
-    if (!("Notification" in window)) {
-      alert("This browser does not support desktop notification.");
-      return;
-    }
-
-    if (notificationsEnabled) {
-      setNotificationsEnabled(false);
-      localStorage.setItem("pokeMed_notifications", "false");
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      return;
-    }
-
-    if (Notification.permission === "granted") {
-      setNotificationsEnabled(true);
-      localStorage.setItem("pokeMed_notifications", "true");
-    } else if (Notification.permission !== "denied") {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        setNotificationsEnabled(true);
-        localStorage.setItem("pokeMed_notifications", "true");
-      }
-    }
   };
 
   const isStarted = !!completedSteps[1];
@@ -293,7 +235,6 @@ function AppContent() {
 
     let currentBaseTime = baseDate.getTime();
     let previousPortions = 0;
-    let hitCutoff = false;
 
     for (let i = 0; i < protocol.maxDoses; i++) {
       const doseNumber = i + 1;
@@ -308,9 +249,9 @@ function AppContent() {
 
       const doseDate = new Date(doseTimeMs);
 
-      if (doseDate.getHours() >= 18) {
-        hitCutoff = true;
-        break;
+      // Skip strict 18:00 cutoff display modal, just visually end or limit
+      if (doseDate.getHours() >= 18 && i > 0) {
+         break;
       }
 
       const isNextDay = doseDate.getFullYear() > baseDate.getFullYear() || doseDate.getMonth() > baseDate.getMonth() || doseDate.getDate() > baseDate.getDate();
@@ -330,383 +271,198 @@ function AppContent() {
         currentBaseTime = doseTimeMs;
       }
     }
-
-    if (isStarted && hitCutoff && generated.length > 0 && !localStorage.getItem("pokeMed_cutoffModalShown")) {
-      setTimeout(() => {
-        setShowCutoffModal(true);
-        localStorage.setItem("pokeMed_cutoffModalShown", "true");
-      }, 0);
-    }
-
     return generated;
   })();
 
-  useEffect(() => {
-    if (!notificationsEnabled || schedule.length === 0 || !isStarted) return;
-
-    const nextDose = schedule.find((d) => !completedSteps[d.doseNumber]);
-    if (!nextDose) return;
-
-    const now = new Date().getTime();
-    const timeUntilDose = nextDose.actualTimeMs - now;
-
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-    if (timeUntilDose > 0) {
-      timeoutRef.current = setTimeout(() => {
-        new Notification("Time for your next Ritalin!", {
-          body: `Dose ${nextDose.doseNumber}: ${nextDose.portions} pill(s). Grab some water!`,
-          icon: "/favicon.ico",
-        });
-      }, timeUntilDose);
-    }
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [schedule, completedSteps, notificationsEnabled, isStarted]);
-
-  const totalPortions = schedule.reduce((sum, dose) => sum + dose.portions, 0);
-  const completedPortions = schedule.filter((dose) => completedSteps[dose.doseNumber]).reduce((sum, dose) => sum + dose.portions, 0);
-
   const nextDose = schedule.find((d) => !completedSteps[d.doseNumber]);
   const isAllComplete = schedule.length > 0 && schedule.every(d => completedSteps[d.doseNumber]);
+  const theme = THEMES[level];
 
-  return (
-    <div className="relative min-h-screen bg-zinc-50 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans p-4 sm:p-8 overflow-hidden">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white focus:text-black">Skip to main content</a>
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className={`absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] ${THEMES[level].glowBg} opacity-60 rounded-full transition-colors duration-700 transform-gpu`} />
-      </div>
-
-      {showCutoffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm motion-safe:animate-in fade-in duration-200 overscroll-contain">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-100 motion-safe:animate-in zoom-in-95 duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" aria-hidden="true">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <button
-                onClick={() => setShowCutoffModal(false)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-red-500 rounded-full p-1"
-                aria-label="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <h3 className="text-xl font-bold mb-2">Whoa there! Past 18:00.</h3>
-            <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
-              To ensure you get a good night’s sleep, we’ve removed any doses scheduled after 18:00 from your timeline today.
-            </p>
-            <button
-              onClick={() => setShowCutoffModal(false)}
-              className="w-full py-3 px-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-red-500"
-            >
-              Got it
-            </button>
+  // ==============================
+  // RENDER: SETUP SCREEN
+  // ==============================
+  if (!isStarted || isAllComplete) {
+    return (
+      <main className="min-h-screen flex flex-col pt-12 pb-8 px-6 max-w-lg mx-auto w-full fade-in">
+        <header className="mb-12">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-[#666] mb-2 flex items-center gap-2">
+            <Zap className="w-3 h-3" /> INITIALIZE PROTOCOL
           </div>
-        </div>
-      )}
+          <h1 className="text-4xl font-sans tracking-tighter uppercase leading-none">
+            {isAllComplete ? "PROTOCOL\nCOMPLETE" : "SET\nPARAMETERS"}
+          </h1>
+        </header>
 
-      <main id="main-content" className="relative z-10 max-w-md mx-auto space-y-8 pb-32">
-        <div className="text-center space-y-2 mt-4">
-          <div className="flex justify-center mb-4">
-            <div className={`p-4 rounded-[2rem] transition-colors duration-300 ${THEMES[level].headerIconBg}`}>
-              <PokeballIcon className={`w-8 h-8 transition-colors duration-300 ${THEMES[level].headerIconText}`} aria-hidden="true" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-balance">Ritalin, I Choose You!</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
-            Gotta catch all {PROTOCOLS[level].maxDoses} pills
-          </p>
-        </div>
-
-        {(!isStarted || isAllComplete) && (
-          <section className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 sm:gap-4" aria-label="Select Protocol Level">
+        <div className="flex-1 space-y-12">
+          {/* LEVEL SELECTION */}
+          <section>
+            <div className="text-xs uppercase tracking-widest text-[#888] mb-4 border-b border-[#333] pb-2">01 // SELECT DOSAGE</div>
+            <div className="flex flex-col gap-3">
               {(["Charmander", "Charmeleon", "Charizard"] as Level[]).map((l) => (
                 <button
                   key={l}
-                  
-                  aria-pressed={level === l}
-                  onClick={() => {
-                    if (Object.keys(completedSteps).length > 1) {
-                      if (confirm("Changing level will reset your schedule. Continue?")) {
-                        setCompletedSteps({});
-                        setStartTime("");
-                        localStorage.removeItem("pokeMed_cutoffModalShown");
-                        setLevel(l);
-                      }
-                    } else {
-                      setLevel(l);
-                    }
-                  }}
-                  className={`flex flex-col items-center justify-center p-4 sm:p-5 min-h-[130px] rounded-[2rem] border-2 transition-[transform,colors,box-shadow] duration-300 motion-safe:hover:-translate-y-1 motion-safe:active:scale-95 focus:outline-none ${THEMES[l].ring} ${
-                    level === l
-                      ? `${THEMES[l].activeBorder} ${THEMES[l].activeBg} ${THEMES[l].activeText} shadow-xl`
-                      : `border-transparent bg-white dark:bg-zinc-900 shadow-md ${THEMES[l].hoverBorder} text-zinc-600 dark:text-zinc-400 hover:shadow-lg`
+                  onClick={() => setLevel(l)}
+                  className={`relative w-full text-left p-4 border transition-all duration-200 uppercase tracking-widest text-lg overflow-hidden ${
+                    level === l 
+                      ? `${THEMES[l].bgClass} text-black border-transparent font-bold` 
+                      : 'border-[#333] text-white hover:border-[#666]'
                   }`}
                 >
-                  <div className="flex gap-0.5 mb-2">
-                    {Array.from({ length: THEMES[l].intensity }).map((_, i) => (
-                      <Target
-                        key={i}
-                        aria-hidden="true"
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${level === l ? THEMES[l].headerIconText : "text-zinc-300 dark:text-zinc-700"}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="font-bold text-sm sm:text-base">{l}</div>
+                  <span className="relative z-10">{l}</span>
+                  {level === l && (
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 font-sans text-xl">
+                      ×{PROTOCOLS[l].maxDoses}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </section>
-        )}
 
-        {(!isStarted || isAllComplete) && (
-          <section className="space-y-5">
-            <div className="space-y-3">
-              <label htmlFor="time-input" className="text-sm font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                First Intake Time
-              </label>
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-zinc-400">
-                    <Clock className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="time-input"
-                    name="startTime"
-                    autoComplete="off"
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => handleTimeChange(e.target.value)}
-                    style={{ colorScheme: "dark" }}
-                    className={`w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-transparent bg-white dark:bg-zinc-900 shadow-sm focus:outline-none ${THEMES[level].ring} transition-colors appearance-none font-medium tabular-nums`}
-                  />
-                </div>
-                <button
-                  onClick={setNow}
-                  className="px-6 py-4 font-bold rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-zinc-500 whitespace-nowrap shadow-sm motion-safe:active:scale-95"
-                >
-                  Now
-                </button>
+          {/* TIME SELECTION */}
+          <section>
+            <div className="text-xs uppercase tracking-widest text-[#888] mb-4 border-b border-[#333] pb-2">02 // T-ZERO (START TIME)</div>
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className={`w-full bg-black border ${startTime ? theme.borderClass : 'border-[#333]'} text-white p-4 font-sans text-3xl uppercase appearance-none rounded-none focus:outline-none focus:border-white transition-colors`}
+                  style={{ colorScheme: "dark" }}
+                />
               </div>
-            </div>
-
-            {startTime && (
-              <div className="pt-2 motion-safe:animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <button
-                  onClick={startSchedule}
-                  className={`w-full py-4 rounded-2xl font-black text-white transition-[transform,opacity,box-shadow] motion-safe:hover:-translate-y-1 motion-safe:active:scale-95 ${THEMES[level].pillSolidBg} shadow-xl hover:shadow-2xl text-lg flex items-center justify-center gap-2`}
-                >
-                  <Pill className="w-5 h-5" aria-hidden="true" />
-                  Start Schedule
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {isStarted && schedule.length > 0 && (
-          <section className="pt-2 motion-safe:animate-in fade-in zoom-in-95 duration-500" aria-live="polite">
-            {!isAllComplete ? (
-              nextDose && (
-                <div className="space-y-3">
-                  <div className="flex justify-end items-end px-2">
-                    <span className="text-sm font-black text-zinc-700 dark:text-zinc-300 tabular-nums bg-zinc-200/50 dark:bg-zinc-800/50 px-3 py-1 rounded-full">
-                      {completedPortions} / {totalPortions} Pills Taken
-                    </span>
-                  </div>
-                  <div className={`relative overflow-hidden p-6 sm:p-8 rounded-[2rem] border-2 ${THEMES[level].activeBorder} ${THEMES[level].activeBg} shadow-xl transition-colors duration-500`}>
-                    <div 
-                      key={nextDose.doseNumber}
-                      className={`flex items-center justify-between motion-safe:animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out ${animatingStep === nextDose.doseNumber ? 'scale-95 opacity-0 transition-[transform,opacity] duration-500' : 'transition-[transform,opacity] duration-500'}`}
-                    >
-                      <div>
-                        <div className="text-sm font-bold text-zinc-900/60 dark:text-white/60 mb-1">
-                          Next Dose
-                        </div>
-                        <h2 className="text-5xl font-black tracking-tight text-balance tabular-nums text-zinc-900 dark:text-white">
-                          {nextDose.timeLabel}
-                        </h2>
-                      </div>
-                      
-                      <button
-                        onClick={() => completeStep(nextDose.doseNumber)}
-                        aria-label="Mark dose as complete"
-                        className={`w-20 h-20 flex-shrink-0 rounded-full flex items-center justify-center transition-[transform,box-shadow,background-color] duration-300 ease-out motion-safe:hover:scale-105 motion-safe:active:scale-90 motion-safe:active:shadow-sm ${animatingStep === nextDose.doseNumber ? 'bg-green-500 shadow-none' : `${THEMES[level].pillSolidBg} shadow-xl hover:shadow-2xl`} text-white focus-visible:outline-none ${THEMES[level].ring} ring-offset-4 ring-offset-transparent`}
-                      >
-                        <div className="flex -space-x-2">
-                          {animatingStep === nextDose.doseNumber ? (
-                            <Check className="w-10 h-10 motion-safe:animate-in zoom-in-50 duration-200" strokeWidth={3.5} aria-hidden="true" />
-                          ) : (
-                            Array.from({ length: nextDose.portions }).map((_, i) => (
-                              <Pill key={i} className="w-8 h-8" strokeWidth={2.5} aria-hidden="true" />
-                            ))
-                          )}
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="p-8 rounded-[2rem] border-2 border-green-400 bg-green-50 dark:bg-green-900/20 text-center shadow-xl motion-safe:animate-in fade-in zoom-in-95 duration-500">
-                <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/40 text-green-500 rounded-full flex items-center justify-center mb-6">
-                  <Check className="w-10 h-10" strokeWidth={3} aria-hidden="true" />
-                </div>
-                <h2 className="text-3xl font-black text-green-700 dark:text-green-300 mb-2 text-balance">All Done!</h2>
-                <p className="text-green-600 dark:text-green-400 font-medium mb-8">Great job adhering to your schedule today.</p>
-                <button
-                  onClick={handleReset}
-                  className="w-full py-4 rounded-2xl font-black text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition-[transform,colors] shadow-lg hover:shadow-xl motion-safe:active:scale-95 text-lg"
-                >
-                  Start New Schedule
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {isStarted && showFullSchedule && (
-          <section className="pt-6 border-t-2 border-zinc-100 dark:border-zinc-800/50 motion-safe:animate-in fade-in duration-500">
-            <div className="relative motion-safe:animate-in slide-in-from-top-4 fade-in duration-300">
-              <div className="absolute left-[31px] top-8 bottom-8 w-1 bg-zinc-100 dark:bg-zinc-800 rounded-full" aria-hidden="true"></div>
-
-                <div className="space-y-8 relative" role="list">
-                  {schedule.map((dose) => {
-                    const isCompleted = !!completedSteps[dose.doseNumber];
-                    const isNext = nextDose?.doseNumber === dose.doseNumber;
-
-                    return (
-                      <div key={dose.doseNumber} className="flex items-center gap-6 group relative" role="listitem">
-                        <div
-                          className={`relative z-10 flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-[background-color,border-color,color,fill,stroke,opacity,box-shadow,transform] duration-300 ${
-                            isCompleted
-                              ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500"
-                              : isNext
-                              ? `${THEMES[level].pillSolidBg} text-white shadow-lg ring-4 ring-offset-2 ring-offset-zinc-50 dark:ring-offset-[#050505] ${THEMES[level].ring.replace("focus-visible:", "")}`
-                              : "bg-white dark:bg-zinc-900 border-4 border-zinc-100 dark:border-zinc-800"
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {isCompleted ? (
-                            <Check className="w-7 h-7" strokeWidth={3} />
-                          ) : (
-                            <div className="flex -space-x-1.5">
-                              {Array.from({ length: dose.portions }).map((_, i) => (
-                                <Pill
-                                  key={i}
-                                  className={`w-5 h-5 ${isNext ? "text-white" : THEMES[level].headerIconText}`}
-                                  fill="currentColor"
-                                  fillOpacity={0.2}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className={`flex flex-col transition-opacity duration-300 ${isCompleted ? "opacity-50" : "opacity-100"}`}>
-                          <div className="flex items-baseline gap-2">
-                            <span className={`text-3xl font-black tracking-tight tabular-nums ${isCompleted ? "line-through text-zinc-400" : "text-zinc-900 dark:text-zinc-100"}`}>
-                              {dose.timeLabel}
-                            </span>
-                            {dose.isNextDay && (
-                              <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md">
-                                +1 Day
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            {dose.portions}&nbsp;{dose.portions === 1 ? "Pill" : "Pills"}
-                            {!isCompleted && !isNext && " (Est.)"}
-                            {isCompleted && (
-                              <span className="text-xs font-medium text-zinc-400 ml-2">
-                                • Logged at {timeFormatter.format(new Date(completedSteps[dose.doseNumber]))}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <button
+                onClick={setNow}
+                className="h-[68px] px-6 border border-[#333] text-[#888] hover:text-white hover:border-white uppercase tracking-widest text-sm transition-colors"
+              >
+                NOW
+              </button>
             </div>
           </section>
-        )}
-
-        <div className="text-center pt-8 pb-12">
-          {notificationsEnabled && isStarted && (
-            <p className="text-xs text-amber-700 dark:text-amber-400 mb-3 font-bold bg-amber-100 dark:bg-amber-900/30 p-3 rounded-xl inline-block">
-              ⚠️ Keep this tab open to receive notifications.
-            </p>
-          )}
-          <p className="text-xs text-zinc-400 font-medium">
-            For tracking purposes only. Always follow medical advice.
-          </p>
         </div>
-        </main>
 
-        {isStarted && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none flex justify-center motion-safe:animate-in slide-in-from-bottom-8 duration-500">
-            <div className="pointer-events-auto flex items-center gap-1 sm:gap-2 p-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50">
-              <button
-                onClick={() => setShowFullSchedule(!showFullSchedule)}
-                aria-pressed={showFullSchedule}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 motion-safe:active:scale-95 ${
-                  showFullSchedule
-                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+        {/* START BUTTON */}
+        <div className="mt-8">
+          <button
+            onClick={startSchedule}
+            disabled={!startTime}
+            className={`w-full py-6 uppercase tracking-[0.2em] font-bold text-lg transition-all ${
+              startTime 
+                ? `${theme.bgClass} text-black hover:scale-[1.02] active:scale-[0.98]` 
+                : 'bg-[#111] text-[#444] cursor-not-allowed'
+            }`}
+          >
+            {isAllComplete ? "RESTART PROTOCOL" : "ENGAGE"}
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // ==============================
+  // RENDER: MAIN TRACKING SCREEN
+  // ==============================
+  return (
+    <main className="min-h-screen flex flex-col w-full max-w-lg mx-auto relative fade-in">
+      
+      {/* HEADER / NAVIGATION */}
+      <header className="flex items-center justify-between p-6 pb-0">
+        <div className="text-[10px] uppercase tracking-[0.2em] flex flex-col">
+          <span className="text-[#666]">PROTOCOL //</span>
+          <span className={`${theme.textClass} font-bold`}>{level}</span>
+        </div>
+        <button 
+          onClick={handleReset}
+          className="w-10 h-10 flex items-center justify-center border border-[#333] rounded-full text-[#666] hover:text-white hover:border-white transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </header>
+
+      {/* HERO: NEXT DOSE TIME */}
+      <section className="flex flex-col items-center justify-center pt-8 pb-12 px-4 shrink-0">
+        <div className="text-xs uppercase tracking-widest text-[#888] mb-2 flex items-center gap-2">
+          {nextDose ? (
+            <>T-MINUS // NEXT DOSE</>
+          ) : (
+            <>T-PLUS // COMPLETE</>
+          )}
+        </div>
+        <div className="w-full relative flex items-center justify-center">
+          <h1 
+            className="font-sans text-[clamp(6rem,25vw,10rem)] leading-none tracking-tighter text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] select-none"
+          >
+            {nextDose ? nextDose.timeLabel : "DONE"}
+          </h1>
+          {nextDose && (
+            <span className={`absolute -right-2 top-2 ${theme.textClass} font-sans text-2xl font-bold`}>
+              ×{nextDose.portions}
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* SCHEDULE LIST (RECEIPT STYLE) */}
+      <section className="flex-1 overflow-y-auto px-6 pb-32">
+        <div className="border-t border-[#333]">
+          {schedule.map((dose) => {
+            const isCompleted = !!completedSteps[dose.doseNumber];
+            const isNext = nextDose?.doseNumber === dose.doseNumber;
+            const isFuture = !isCompleted && !isNext;
+
+            return (
+              <div 
+                key={dose.doseNumber} 
+                className={`py-4 border-b border-[#222] flex items-center justify-between transition-colors ${
+                  isCompleted ? 'opacity-40' : isNext ? 'opacity-100' : 'opacity-70'
                 }`}
               >
-                {showFullSchedule ? <EyeOff className="w-6 h-6 mb-1" aria-hidden="true" /> : <Eye className="w-6 h-6 mb-1" aria-hidden="true" />}
-                <span className="text-[10px] font-bold">Timeline</span>
-              </button>
-              
-              <button
-                onClick={toggleNotifications}
-                aria-pressed={notificationsEnabled}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:active:scale-95 ${
-                  notificationsEnabled
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                {notificationsEnabled ? <BellRing className="w-6 h-6 mb-1" aria-hidden="true" /> : <Bell className="w-6 h-6 mb-1" aria-hidden="true" />}
-                <span className="text-[10px] font-bold">Notifs</span>
-              </button>
+                <div className="flex items-baseline gap-4">
+                  <span className={`w-6 text-xs text-[#555] ${isNext ? theme.textClass : ''}`}>
+                    {String(dose.doseNumber).padStart(2, '0')}
+                  </span>
+                  <span className={`text-2xl font-sans tracking-tight ${isCompleted ? 'line-through text-[#666]' : isNext ? 'text-white' : 'text-[#aaa]'}`}>
+                    {dose.timeLabel}
+                  </span>
+                  {dose.isNextDay && (
+                    <span className="text-[9px] uppercase tracking-widest bg-[#222] px-1 text-[#888]">
+                      +1D
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[#666] tracking-widest">
+                    {dose.portions} PILL{dose.portions > 1 ? 'S' : ''}
+                  </span>
+                  <div className={`w-3 h-3 rounded-full ${
+                    isCompleted ? 'bg-[#333]' : isNext ? `${theme.bgClass} animate-pulse` : 'border border-[#444]'
+                  }`} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-              <button
-                onClick={handleUndo}
-                disabled={Object.keys(completedSteps).length === 0}
-                className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 motion-safe:active:scale-95 ${
-                  Object.keys(completedSteps).length > 0
-                    ? "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                    : "text-zinc-300 dark:text-zinc-700 opacity-50 cursor-not-allowed"
-                }`}
-              >
-                <Undo className="w-6 h-6 mb-1" aria-hidden="true" />
-                <span className="text-[10px] font-bold">Undo</span>
-              </button>
+      {/* BOTTOM ACTION AREA */}
+      <div className="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto">
+        <HoldButton 
+          onComplete={() => nextDose && completeStep(nextDose.doseNumber)}
+          theme={theme}
+          disabled={!nextDose}
+          label={nextDose ? "HOLD TO CONSUME" : "PROTOCOL COMPLETE"}
+        />
+      </div>
 
-              <button
-                onClick={handleReset}
-                className="flex flex-col items-center justify-center w-[72px] h-[64px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 motion-safe:active:scale-95 text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                <RotateCcw className="w-6 h-6 mb-1" aria-hidden="true" />
-                <span className="text-[10px] font-bold">Reset</span>
-              </button>
-            </div>
-          </div>
-        )}
-    </div>
+    </main>
   );
 }
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-[#050505]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <AppContent />
     </Suspense>
   );
