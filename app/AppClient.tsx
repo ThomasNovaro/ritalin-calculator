@@ -493,14 +493,16 @@ export default function AppClient({
                 Daily Schedule
               </p>
             </div>
-            <div
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               className={cn(
                 "p-3 rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] text-white shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] transition-colors duration-500",
                 THEMES[level].bg,
               )}
             >
               <PokeballIcon className="w-8 h-8" />
-            </div>
+            </motion.div>
           </header>
 
           {!isStarted ? (
@@ -514,8 +516,10 @@ export default function AppClient({
                     (l) => {
                       const isActive = level === l;
                       return (
-                        <button
+                        <motion.button
                           key={l}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => setLevel(l)}
                           className={cn(
                             "relative flex flex-col items-center justify-center p-4 min-h-[140px] rounded-[1.5rem] border-4 transition-all duration-300 outline-none",
@@ -548,7 +552,7 @@ export default function AppClient({
                           <div className="font-sans text-[8px] font-bold opacity-70 uppercase tracking-widest mt-2">
                             {THEMES[l].label}
                           </div>
-                        </button>
+                        </motion.button>
                       );
                     },
                   )}
@@ -574,12 +578,14 @@ export default function AppClient({
                       className="w-full min-w-0 pl-9 pr-1 sm:pl-14 sm:pr-4 py-4 sm:py-5 rounded-[1rem] sm:rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-white dark:bg-[#151515] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_#1a1a1a] transition-all font-serif text-lg sm:text-2xl font-black tabular-nums appearance-none"
                     />
                   </div>
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={setNow}
                     className="flex-shrink-0 px-4 sm:px-6 py-4 sm:py-5 rounded-[1rem] sm:rounded-2xl border-4 border-[#1A1A1A] dark:border-[#333] bg-[#1A1A1A] dark:bg-[#F4F4F0] text-[#F4F4F0] dark:text-[#1A1A1A] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:translate-y-[2px] active:shadow-[2px_2px_0px_#1a1a1a] transition-all font-black uppercase tracking-widest text-[10px] sm:text-xs"
                   >
                     Now
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 
@@ -587,6 +593,8 @@ export default function AppClient({
                 <motion.button
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={startSchedule}
                   className={cn(
                     "w-full py-6 rounded-3xl border-4 border-[#1A1A1A] dark:border-[#333] text-white shadow-[6px_6px_0px_#1a1a1a] dark:shadow-[6px_6px_0px_#000] active:translate-y-[4px] active:shadow-[2px_2px_0px_#1a1a1a] transition-all flex items-center justify-center gap-3 font-black text-xl tracking-tight uppercase",
@@ -641,7 +649,8 @@ export default function AppClient({
                       {animatingStep?.step !== nextDose.doseNumber && (
                         <motion.button
                           layoutId={`dose-action-${nextDose.doseNumber}`}
-                          whileTap={{ scale: 0.9 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.85 }}
                           onClick={() => completeStep(nextDose.doseNumber)}
                           className={cn(
                             "absolute inset-0 rounded-[2rem] flex items-center justify-center border-4 border-[#1A1A1A] dark:border-[#333] shadow-[4px_4px_0px_#1a1a1a] dark:shadow-[4px_4px_0px_#000] active:shadow-[0px_0px_0px_#1a1a1a] active:translate-y-1 transition-all text-white",
@@ -663,8 +672,20 @@ export default function AppClient({
                 <span className="font-sans font-bold text-[10px] tracking-widest uppercase opacity-50">
                   Daily Progress
                 </span>
-                <span className="font-serif font-black text-xl">
-                  {completedPortions} / {totalPortions} Pills
+                <span className="font-serif font-black text-xl flex items-center gap-1 relative overflow-hidden px-1">
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={completedPortions}
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 20, opacity: 0, position: "absolute" }}
+                      transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                      className="inline-block"
+                    >
+                      {completedPortions}
+                    </motion.span>
+                  </AnimatePresence>
+                  <span>/ {totalPortions} Pills</span>
                 </span>
               </div>
             </motion.section>
@@ -795,14 +816,14 @@ export default function AppClient({
 
                       return (
                         <motion.div
+                          layout
                           key={dose.doseNumber}
                           initial={{ opacity: 0, y: 50 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{
-                            delay: index * 0.05,
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 25,
+                            opacity: { delay: index * 0.05 },
+                            y: { delay: index * 0.05, type: "spring", stiffness: 300, damping: 25 },
+                            layout: { type: "spring", stiffness: 350, damping: 30 }
                           }}
                           className={cn(
                             "relative p-5 rounded-[1.5rem] border-4 transition-all duration-500 flex items-center justify-between -mt-6 first:mt-0",

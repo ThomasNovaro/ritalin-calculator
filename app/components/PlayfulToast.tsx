@@ -24,13 +24,13 @@ export function PlayfulToast({ word, themeColorClass }: PlayfulToastProps) {
   return (
     <motion.div
       className="fixed top-10 left-0 right-0 z-[100] flex justify-center pointer-events-none"
-      initial={{ y: -100, opacity: 0, scale: 0.8 }}
-      animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: -50, opacity: 0, scale: 0.8 }}
+      initial={{ y: -100, opacity: 0, scale: 0.5, rotate: -10 }}
+      animate={{ y: 0, opacity: 1, scale: 1, rotate: 0 }}
+      exit={{ y: -50, opacity: 0, scale: 0.8, rotate: 5 }}
       transition={{
         type: "spring",
-        damping: 15,
-        stiffness: 400,
+        damping: 12,
+        stiffness: 300,
         mass: 0.8,
       }}
     >
