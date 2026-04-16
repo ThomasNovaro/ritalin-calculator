@@ -209,7 +209,10 @@ export default function AppClient({
 
     if (savedNotifs === "false") {
       setNotificationsEnabled(false);
-    } else if ("Notification" in window && Notification.permission === "granted") {
+    } else if (
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       setNotificationsEnabled(true);
     } else {
       setNotificationsEnabled(true);
@@ -320,7 +323,7 @@ export default function AppClient({
         setNotificationsEnabled(true);
         localStorage.setItem("pokeMed_notifications", "true");
         sendNotification("Notifications Enabled! 🔔", {
-          body: "You will now receive alerts for your schedule. Keep the app open in the background to receive timely reminders.",
+          body: "You will now receive alerts for your schedule. Keep the app open in the background to receive timely reminders!",
           icon: "/icon",
         });
       }
