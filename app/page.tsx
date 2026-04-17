@@ -20,6 +20,7 @@ interface DoseInfo {
   timeLabel: string;
   portions: number;
   isNextDay: boolean;
+  isAfterCutoff: boolean;
   actualTimeMs: number;
 }
 
@@ -70,6 +71,24 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   hour12: false,
 });
+
+const formatTimeInputValue = (timeMs: number) => {
+  const date = new Date(timeMs);
+  return `${String(date.getHours()).padStart(2, "0")}:${String(
+    date.getMinutes(),
+  ).padStart(2, "0")}`;
+};
+
+const toTimeOnOrAfter = (baseTimeMs: number, value: string) => {
+  const [hours, minutes] = value.split(":").map(Number);
+  const baseDate = new Date(baseTimeMs);
+  const candidate = new Date(baseDate);
+  candidate.setHours(hours, minutes, 0, 0);
+  if (candidate.getTime() < baseTimeMs) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
+  return candidate.getTime();
+};
 
 // -- Custom Hold Button --
 function HoldButton({
@@ -165,7 +184,15 @@ function AppContent() {
   const [showPast, setShowPast] = useState(false);
   const [showCutoffModal, setShowCutoffModal] = useState(false);
   const [showCustomTimeModal, setShowCustomTimeModal] = useState(false);
+  const [showEditDoseModal, setShowEditDoseModal] = useState(false);
   const [customTimeInput, setCustomTimeInput] = useState("");
+  const [editDoseTimeInput, setEditDoseTimeInput] = useState("");
+  const [editingDoseNumber, setEditingDoseNumber] = useState<number | null>(
+    null,
+  );
+  const [editedDoseTimes, setEditedDoseTimes] = useState<Record<number, number>>(
+    {},
+  );
   const [acknowledgedCutoff, setAcknowledgedCutoff] = useState(false);
   const [quote, setQuote] = useState("");
   const [cheerMsg, setCheerMsg] = useState<{ text: string; id: number } | null>(
@@ -224,6 +251,13 @@ function AppContent() {
         setNotifiedDoses(JSON.parse(savedNotified));
       } catch (e) {}
     }
+
+    const savedEditedDoseTimes = localStorage.getItem("pokeMed_editedDoseTimes");
+    if (savedEditedDoseTimes) {
+      try {
+        setEditedDoseTimes(JSON.parse(savedEditedDoseTimes));
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -243,8 +277,12 @@ function AppContent() {
         "pokeMed_notifiedDoses",
         JSON.stringify(notifiedDoses),
       );
+      localStorage.setItem(
+        "pokeMed_editedDoseTimes",
+        JSON.stringify(editedDoseTimes),
+      );
     }
-  }, [completedSteps, notifiedDoses, mounted]);
+  }, [completedSteps, notifiedDoses, editedDoseTimes, mounted]);
 
   const handleReset = () => {
     if (!confirm("reset protocol?")) return;
@@ -252,10 +290,12 @@ function AppContent() {
     setLevel("Charmander");
     setCompletedSteps({});
     setNotifiedDoses({});
+    setEditedDoseTimes({});
     localStorage.removeItem("pokeMed_startTime");
     localStorage.removeItem("pokeMed_level");
     localStorage.removeItem("pokeMed_completedSteps_v2");
     localStorage.removeItem("pokeMed_notifiedDoses");
+    localStorage.removeItem("pokeMed_editedDoseTimes");
   };
 
   const handleUndo = () => {
@@ -312,8 +352,8 @@ function AppContent() {
 
   const isStarted = !!completedSteps[1];
 
-  const schedule: DoseInfo[] = (() => {
-    if (!mounted || !startTime) return [];
+  const { schedule, hitCutoff } = useMemo(() => {
+    if (!mounted || !startTime) return { schedule: [], hitCutoff: false };
 
     const [hoursStr, minutesStr] = startTime.split(":");
     const startHours = parseInt(hoursStr, 10);
@@ -334,6 +374,7 @@ function AppContent() {
 
     let currentBaseTime = baseDate.getTime();
     let previousPortions = 0;
+    let hasDoseAfterCutoff = false;
 
     for (let i = 0; i < protocol.maxDoses; i++) {
       const doseNumber = i + 1;
@@ -346,11 +387,16 @@ function AppContent() {
         doseTimeMs = currentBaseTime + gapMinutes * 60000;
       }
 
-      const doseDate = new Date(doseTimeMs);
+      if (completedSteps[doseNumber]) {
+        doseTimeMs = completedSteps[doseNumber];
+      } else if (editedDoseTimes[doseNumber]) {
+        doseTimeMs = editedDoseTimes[doseNumber];
+      }
 
-      // Skip strict 18:00 cutoff display modal, just visually end or limit
-      if (doseDate.getHours() >= 18 && i > 0) {
-        break;
+      const doseDate = new Date(doseTimeMs);
+      const isAfterCutoff = doseDate.getHours() >= 18;
+      if (i > 0 && isAfterCutoff) {
+        hasDoseAfterCutoff = true;
       }
 
       const isNextDay =
@@ -363,24 +409,21 @@ function AppContent() {
         timeLabel: timeFormatter.format(doseDate),
         portions: protocol.portions[i],
         isNextDay,
+        isAfterCutoff,
         actualTimeMs: doseTimeMs,
       });
 
       previousPortions = protocol.portions[i];
-      if (completedSteps[doseNumber]) {
-        currentBaseTime = completedSteps[doseNumber];
-      } else {
-        currentBaseTime = doseTimeMs;
-      }
+      currentBaseTime = doseTimeMs;
     }
-    return generated;
-  })();
+    return { schedule: generated, hitCutoff: hasDoseAfterCutoff };
+  }, [mounted, startTime, level, completedSteps, editedDoseTimes]);
 
   const nextDose = schedule.find((d) => !completedSteps[d.doseNumber]);
   const isAllComplete =
     schedule.length > 0 && schedule.every((d) => completedSteps[d.doseNumber]);
   const theme = THEMES[level];
-  const willBeTruncated = schedule.length < PROTOCOLS[level].maxDoses;
+  const shouldWarnCutoff = hitCutoff;
 
   useEffect(() => {
     if ("serviceWorker" in navigator && "Notification" in window) {
@@ -427,7 +470,7 @@ function AppContent() {
 
   const startSchedule = async (forceProceed = false) => {
     if (!startTime) return;
-    if (willBeTruncated && !acknowledgedCutoff && !forceProceed) {
+    if (shouldWarnCutoff && !acknowledgedCutoff && !forceProceed) {
       setShowCutoffModal(true);
       return;
     }
@@ -453,6 +496,40 @@ function AppContent() {
         });
       }
     }
+  };
+
+  const openEditDoseModal = (dose: DoseInfo) => {
+    setEditingDoseNumber(dose.doseNumber);
+    setEditDoseTimeInput(formatTimeInputValue(dose.actualTimeMs));
+    setShowEditDoseModal(true);
+  };
+
+  const applyEditedDoseTime = () => {
+    if (!editingDoseNumber || !editDoseTimeInput) return;
+    const editingDose = schedule.find(
+      (dose) => dose.doseNumber === editingDoseNumber,
+    );
+    if (!editingDose) return;
+
+    const previousDoseTime =
+      schedule.find((dose) => dose.doseNumber === editingDoseNumber - 1)
+        ?.actualTimeMs ?? editingDose.actualTimeMs;
+
+    const nextTimeMs = toTimeOnOrAfter(previousDoseTime, editDoseTimeInput);
+
+    setEditedDoseTimes((prev) => {
+      const next: Record<number, number> = {};
+      for (const [doseKey, time] of Object.entries(prev)) {
+        const doseNumber = Number(doseKey);
+        if (doseNumber < editingDoseNumber) {
+          next[doseNumber] = time;
+        }
+      }
+      next[editingDoseNumber] = nextTimeMs;
+      return next;
+    });
+    setShowEditDoseModal(false);
+    setEditingDoseNumber(null);
   };
 
   useEffect(() => {
@@ -606,9 +683,8 @@ function AppContent() {
                 schedule adjusted
               </h2>
               <p className="text-subtext mb-8 text-[13px] leading-relaxed">
-                the calculated schedule goes past 18:00. to prevent sleep
-                disruption, some late doses have been omitted from this
-                protocol.
+                the calculated schedule goes past 18:00. late doses are still
+                shown in your timeline so you can plan with full visibility.
               </p>
               <div className="flex gap-2">
                 <button
@@ -747,9 +823,23 @@ function AppContent() {
                       +1d
                     </span>
                   )}
+                  {dose.isAfterCutoff && (
+                    <span className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext">
+                      18+
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {!isCompleted && (
+                    <button
+                      onClick={() => openEditDoseModal(dose)}
+                      className="w-8 h-8 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-colors duration-100 ease-linear"
+                      aria-label={`edit dose ${dose.doseNumber} time`}
+                    >
+                      <Clock className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  )}
                   <span className="text-[13px] text-subtext tracking-[0.05em]">
                     {dose.portions} pill{dose.portions > 1 ? "s" : ""}
                   </span>
@@ -841,6 +931,39 @@ function AppContent() {
                 className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
               >
                 log dose
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* EDIT DOSE TIME MODAL */}
+      {showEditDoseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
+          <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
+            <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
+              <Clock className={`w-4 h-4 ${theme.textClass}`} strokeWidth={1} />{" "}
+              edit dose {editingDoseNumber ? String(editingDoseNumber).padStart(2, "0") : ""}
+            </h2>
+            <div className="mb-8">
+              <input
+                type="time"
+                value={editDoseTimeInput}
+                onChange={(e) => setEditDoseTimeInput(e.target.value)}
+                className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-2xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-colors duration-100 ease-linear"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowEditDoseModal(false)}
+                className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
+              >
+                cancel
+              </button>
+              <button
+                onClick={applyEditedDoseTime}
+                className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
+              >
+                save time
               </button>
             </div>
           </div>
