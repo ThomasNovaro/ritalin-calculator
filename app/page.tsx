@@ -87,7 +87,19 @@ const formatTimeInputValue = (timeMs: number) => {
 };
 
 const toTimeOnOrAfter = (baseTimeMs: number, value: string) => {
-  const [hours, minutes] = value.split(":").map(Number);
+  const [hoursRaw, minutesRaw] = value.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return baseTimeMs;
+  }
   const baseDate = new Date(baseTimeMs);
   const candidate = new Date(baseDate);
   candidate.setHours(hours, minutes, 0, 0);
@@ -520,7 +532,8 @@ function AppContent() {
 
     const previousDoseTime =
       schedule.find((dose) => dose.doseNumber === editingDoseNumber - 1)
-        ?.actualTimeMs ?? editingDose.actualTimeMs;
+        ?.actualTimeMs ??
+      new Date(editingDose.actualTimeMs).setHours(0, 0, 0, 0);
 
     const nextTimeMs = toTimeOnOrAfter(previousDoseTime, editDoseTimeInput);
 
