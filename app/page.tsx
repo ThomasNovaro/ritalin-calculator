@@ -524,7 +524,7 @@ function AppContent() {
   };
 
   const applyEditedDoseTime = () => {
-    if (!editingDoseNumber || !editDoseTimeInput) return;
+    if (editingDoseNumber === null || !editDoseTimeInput) return;
     const editingDose = schedule.find(
       (dose) => dose.doseNumber === editingDoseNumber,
     );
@@ -538,13 +538,11 @@ function AppContent() {
     const nextTimeMs = toTimeOnOrAfter(previousDoseTime, editDoseTimeInput);
 
     setEditedDoseTimes((prev) => {
-      const next: Record<number, number> = {};
-      for (const [doseKey, time] of Object.entries(prev)) {
-        const doseNumber = Number(doseKey);
-        if (doseNumber < editingDoseNumber) {
-          next[doseNumber] = time;
-        }
-      }
+      const next = Object.fromEntries(
+        Object.entries(prev).filter(([doseKey]) => {
+          return Number(doseKey) < editingDoseNumber;
+        }),
+      ) as Record<number, number>;
       next[editingDoseNumber] = nextTimeMs;
       return next;
     });
@@ -844,7 +842,11 @@ function AppContent() {
                     </span>
                   )}
                   {dose.isAfterCutoff && (
-                    <span className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext">
+                    <span
+                      className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext"
+                      aria-label="scheduled after 18:00"
+                      title="scheduled after 18:00"
+                    >
                       18+
                     </span>
                   )}
