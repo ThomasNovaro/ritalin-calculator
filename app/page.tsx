@@ -458,50 +458,76 @@ function AppContent() {
     if (!isStarted || !nextDose || !mounted) return;
     if (notifiedDoses[nextDose.doseNumber]) return;
 
+    const checkAndNotify = () => {
+      if (notifiedDoses[nextDose.doseNumber]) return;
+      const now = Date.now();
+      if (now >= nextDose.actualTimeMs) {
+        if (
+          "Notification" in window &&
+          Notification.permission === "granted" &&
+          "serviceWorker" in navigator
+        ) {
+          navigator.serviceWorker.ready.then((registration) => {
+            const notificationVariants = [
+              "Hey bestie! Time for your meds! 🥰",
+              "I'm not mad, just disappointed... take your dose before I cry. 🥺",
+              "Your dopamine delivery is here! 📦",
+              "If you ignore me, I'll just keep bothering you. Pill time. 🙄",
+              "Look at you, doing so well today! Let's keep it up—take your meds! ✨",
+              "Knock knock! It's your friendly reminder! 🚪",
+              "I know you're busy, but your brain needs this. 🧠",
+              "Time to re-up your focus stats! 📊",
+              "I've been waiting all day to remind you! 🤩",
+              "Don't make me sad. Take your meds! 💧",
+              "It's me again! Did you miss me? Time for your pills! 🦉",
+              "Please take your meds so I can stop worrying about you. 😩",
+            ];
+            const randomMessage = notificationVariants[Math.floor(Math.random() * notificationVariants.length)];
+            
+            registration.showNotification(
+              `dose ${String(nextDose.doseNumber).padStart(2, "0")} ready`,
+              {
+                body: `${randomMessage} (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
+                vibrate: [200, 100, 200, 100, 200],
+                tag: `dose-${nextDose.doseNumber}`,
+                requireInteraction: true,
+              } as NotificationOptions,
+            );
+          });
+        }
+        setNotifiedDoses((prev) => ({ ...prev, [nextDose.doseNumber]: true }));
+      }
+    };
+
     const now = Date.now();
     const timeUntilDose = nextDose.actualTimeMs - now;
+    let timeout: NodeJS.Timeout;
 
-    // If the dose time has already passed (e.g. app was closed and reopened), notify immediately
-    const delay = Math.max(0, timeUntilDose);
+    if (timeUntilDose <= 0) {
+      checkAndNotify();
+    } else {
+      timeout = setTimeout(checkAndNotify, timeUntilDose);
+    }
 
-    const timeout = setTimeout(() => {
-      if (
-        "Notification" in window &&
-        Notification.permission === "granted" &&
-        "serviceWorker" in navigator
-      ) {
-        navigator.serviceWorker.ready.then((registration) => {
-          const notificationVariants = [
-            "Hey bestie! Time for your meds! 🥰",
-            "I'm not mad, just disappointed... take your dose before I cry. 🥺",
-            "Your dopamine delivery is here! 📦",
-            "If you ignore me, I'll just keep bothering you. Pill time. 🙄",
-            "Look at you, doing so well today! Let's keep it up—take your meds! ✨",
-            "Knock knock! It's your friendly reminder! 🚪",
-            "I know you're busy, but your brain needs this. 🧠",
-            "Time to re-up your focus stats! 📊",
-            "I've been waiting all day to remind you! 🤩",
-            "Don't make me sad. Take your meds! 💧",
-            "It's me again! Did you miss me? Time for your pills! 🦉",
-            "Please take your meds so I can stop worrying about you. 😩",
-          ];
-          const randomMessage = notificationVariants[Math.floor(Math.random() * notificationVariants.length)];
-          
-          registration.showNotification(
-            `dose ${String(nextDose.doseNumber).padStart(2, "0")} ready`,
-            {
-              body: `${randomMessage} (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
-              vibrate: [200, 100, 200, 100, 200],
-              tag: `dose-${nextDose.doseNumber}`,
-              requireInteraction: true,
-            } as NotificationOptions,
-          );
-        });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkAndNotify();
       }
-      setNotifiedDoses((prev) => ({ ...prev, [nextDose.doseNumber]: true }));
-    }, delay);
+    };
 
-    return () => clearTimeout(timeout);
+    const handleFocus = () => checkAndNotify();
+    const handlePageShow = () => checkAndNotify();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
   }, [nextDose, isStarted, mounted, notifiedDoses]);
 
   const startSchedule = async (forceProceed = false) => {
@@ -563,6 +589,15 @@ function AppContent() {
       next[editingDoseNumber] = nextTimeMs;
       return next;
     });
+
+    setNotifiedDoses((prev) => {
+      const next = { ...prev };
+      for (let i = editingDoseNumber; i <= PROTOCOLS[level].maxDoses; i++) {
+        delete next[i];
+      }
+      return next;
+    });
+
     setShowEditDoseModal(false);
     setEditingDoseNumber(null);
   };
