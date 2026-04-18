@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Undo,
   Clock,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlayfulToast } from "./components/PlayfulToast";
@@ -553,10 +554,11 @@ function AppContent() {
   useEffect(() => {
     if (isAllComplete) {
       const quotes = [
-        "great job sticking to the protocol today.",
-        "you conquered the day! rest and recover.",
-        "protocol complete. your future self thanks you.",
-        "all doses logged. time to wind down.",
+        "protocol finished for the day.",
+        "all doses logged. day complete.",
+        "you're done for today. rest up.",
+        "protocol complete. see you tomorrow.",
+        "finished for the day. good work.",
       ];
       setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     }
@@ -568,22 +570,61 @@ function AppContent() {
   if (!isStarted || isAllComplete) {
     if (isAllComplete) {
       return (
-        <main className="min-h-screen flex flex-col pt-24 pb-8 px-6 max-w-lg mx-auto w-full items-center justify-center text-center">
-          <div className="flex-1 flex flex-col items-center justify-center w-full">
-            <Power className="w-12 h-12 text-foreground mb-8" strokeWidth={1} />
-            <h1 className="text-4xl text-semibold font-sans tracking-tighter leading-none mb-12 text-foreground">
+        <main className="min-h-screen flex flex-col pt-24 pb-8 px-6 max-w-lg mx-auto w-full items-center justify-center text-center overflow-hidden relative">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="flex-1 flex flex-col items-center justify-center w-full relative z-10"
+          >
+            <div className="relative mb-12 flex items-center justify-center">
+               <motion.div
+                 animate={{ rotate: 360 }}
+                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                 className={`absolute w-[200px] h-[200px] rounded-full blur-3xl opacity-20 pointer-events-none ${theme.bgClass}`}
+               />
+               <motion.div
+                 initial={{ scale: 0, rotate: -45 }}
+                 animate={{ scale: 1, rotate: 0 }}
+                 transition={{ 
+                   type: "spring", 
+                   damping: 12, 
+                   stiffness: 400,
+                   delay: 0.1 
+                 }}
+                 className={`w-20 h-20 border-2 border-border-theme ${theme.bgClass} text-white rounded-full flex items-center justify-center shadow-[4px_4px_0px_currentColor] relative z-10`}
+               >
+                 <Check className="w-10 h-10" strokeWidth={3} />
+               </motion.div>
+            </div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="text-4xl text-semibold font-sans tracking-tighter leading-none mb-6 text-foreground"
+            >
               protocol complete
-            </h1>
+            </motion.h1>
+            
             {quote && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
                 className={`text-2xl font-sans tracking-tight ${theme.textClass} px-4 leading-tight `}
               >
                 "{quote}"
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
-          <div className="w-full mt-12 border-t border-border-theme pt-8">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+            className="w-full mt-12 border-t border-border-theme pt-8 relative z-10"
+          >
             <button
               onClick={() => {
                 setStartTime("");
@@ -593,11 +634,11 @@ function AppContent() {
                 localStorage.removeItem("pokeMed_level");
                 localStorage.removeItem("pokeMed_completedSteps_v2");
               }}
-              className="w-full py-4 border border-border-theme bg-surface text-foreground tracking-widest text-[13px] transition-all duration-100 ease-linear hover:bg-foreground hover:text-background"
+              className="w-full py-4 border border-border-theme bg-surface text-foreground tracking-widest text-[13px] transition-all duration-100 ease-linear hover:bg-foreground hover:text-background flex items-center justify-center gap-2"
             >
-              reset protocol
+              <RotateCcw className="w-4 h-4" /> reset protocol
             </button>
-          </div>
+          </motion.div>
         </main>
       );
     }
@@ -690,40 +731,53 @@ function AppContent() {
         </div>
 
         {/* CUTOFF WARNING MODAL */}
-        {showCutoffModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
-            <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
-              <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
-                <AlertCircle
-                  className={`w-4 h-4 ${theme.textClass}`}
-                  strokeWidth={1}
-                />{" "}
-                schedule adjusted
-              </h2>
-              <p className="text-subtext mb-8 text-[13px] leading-relaxed">
-                the calculated schedule goes past 18:00. late doses are still
-                shown in your timeline so you can plan with full visibility.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowCutoffModal(false)}
-                  className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
-                >
-                  cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setAcknowledgedCutoff(true);
-                    startSchedule(true);
-                  }}
-                  className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
-                >
-                  proceed
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showCutoffModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/90 sm:p-6"
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                className="bg-panel border-t sm:border border-border-theme p-6 pt-8 sm:p-6 w-full max-w-sm"
+              >
+                <h2 className="text-lg text-foreground mb-2 tracking-wide font-medium flex items-center gap-2">
+                  <AlertCircle
+                    className={`w-4 h-4 ${theme.textClass}`}
+                    strokeWidth={1.5}
+                  />{" "}
+                  schedule adjusted
+                </h2>
+                <p className="text-subtext mb-8 text-[13px] leading-relaxed">
+                  the calculated schedule goes past 18:00. late doses are still
+                  shown in your timeline so you can plan with full visibility.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCutoffModal(false)}
+                    className="flex-1 py-4 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-all duration-100 ease-linear active:scale-95"
+                  >
+                    cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAcknowledgedCutoff(true);
+                      startSchedule(true);
+                    }}
+                    className={`flex-1 py-4 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-all duration-100 ease-linear active:scale-95`}
+                  >
+                    proceed
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     );
   }
@@ -810,40 +864,43 @@ function AppContent() {
             return (
               <div
                 key={dose.doseNumber}
-                className={`py-3 border-b border-surface flex items-center justify-between transition-colors duration-100 ease-linear ${
+                className={`py-4 border-b border-surface flex items-center justify-between transition-all duration-300 ease-linear ${
                   isCompleted
-                    ? "opacity-40 bg-surface"
+                    ? "opacity-30 bg-surface grayscale"
                     : isNext
-                      ? "opacity-100 bg-panel border-border-theme px-2 my-2"
-                      : "opacity-70"
+                      ? "opacity-100 bg-panel border-l-[6px] px-3 my-2 shadow-sm rounded-none"
+                      : "opacity-80 hover:opacity-100"
                 }`}
+                style={{
+                  borderLeftColor: isNext ? THEMES[level].color : "transparent",
+                }}
               >
                 <div className="flex items-baseline gap-4">
                   <span
-                    className={`w-6 text-[13px] text-subtext ${isNext ? theme.textClass : ""}`}
+                    className={`w-6 text-[13px] font-bold ${isNext ? theme.textClass : "text-subtext"}`}
                   >
                     {String(dose.doseNumber).padStart(2, "0")}
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span
-                      className={`text-2xl font-sans tracking-tight [font-variant-numeric:tabular-nums] ${isCompleted ? "line-through text-subtext" : isNext ? "text-foreground" : "text-subtext"}`}
+                      className={`text-2xl font-sans tracking-tight [font-variant-numeric:tabular-nums] ${isCompleted ? "line-through text-subtext" : isNext ? "text-foreground font-bold" : "text-subtext"}`}
                     >
                       {dose.timeLabel}
                     </span>
                     {isCompleted && actualTimeLabel && (
-                      <span className="text-sm font-sans tracking-tight text-subtext [font-variant-numeric:tabular-nums]">
-                        [{actualTimeLabel}]
+                      <span className="text-xs font-sans tracking-tight text-subtext/70 [font-variant-numeric:tabular-nums] flex items-center gap-1">
+                        <Check className="w-3 h-3" /> {actualTimeLabel}
                       </span>
                     )}
                   </div>
                   {dose.isNextDay && (
-                    <span className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext">
+                    <span className="text-[10px] font-bold tracking-widest bg-surface border border-border-theme px-1.5 py-0.5 rounded-none text-subtext uppercase">
                       +1d
                     </span>
                   )}
                   {dose.isAfterCutoff && (
                     <span
-                      className="text-[11px] tracking-widest bg-surface border border-border-theme px-1 text-subtext"
+                      className="text-[10px] font-bold tracking-widest bg-surface border border-border-theme px-1.5 py-0.5 rounded-none text-subtext uppercase"
                       aria-label="scheduled after 18:00"
                       title="scheduled after 18:00"
                     >
@@ -856,24 +913,15 @@ function AppContent() {
                   {!isCompleted && (
                     <button
                       onClick={() => openEditDoseModal(dose)}
-                      className="w-8 h-8 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-colors duration-100 ease-linear"
+                      className={`px-3 py-1.5 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-all duration-100 ease-linear active:scale-95 text-[11px] tracking-widest uppercase rounded-none ${isNext ? "bg-surface font-semibold" : ""}`}
                       aria-label={`edit dose ${dose.doseNumber} time`}
                     >
-                      <Clock className="w-4 h-4" strokeWidth={1.5} />
+                      adjust
                     </button>
                   )}
-                  <span className="text-[13px] text-subtext tracking-[0.05em]">
+                  <span className={`text-[11px] font-bold tracking-widest px-2 py-1 rounded-none uppercase ${isNext ? `${theme.bgClass} text-white` : "bg-surface text-subtext border border-border-theme"}`}>
                     {dose.portions} pill{dose.portions > 1 ? "s" : ""}
                   </span>
-                  <div
-                    className={`w-3 h-3 border rounded-none ${
-                      isCompleted
-                        ? `border-border-theme ${theme.bgClass}`
-                        : isNext
-                          ? `${theme.borderClass} bg-transparent`
-                          : "border-border-theme bg-transparent"
-                    }`}
-                  />
                 </div>
               </div>
             );
@@ -899,98 +947,125 @@ function AppContent() {
                 setCustomTimeInput(timeFormatter.format(now));
                 setShowCustomTimeModal(true);
               }}
-              className="w-24 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-colors duration-100 ease-linear"
+              className="w-24 border border-border-theme flex items-center justify-center bg-background hover:bg-surface text-foreground transition-all duration-100 ease-linear active:scale-95 text-[11px] tracking-widest"
             >
-              <Clock
-                className={`w-5 h-5 ${theme.textClass}`}
-                strokeWidth={1.5}
-              />
+              custom
             </button>
           )}
         </div>
       </div>
 
       {/* CUSTOM TIME MODAL */}
-      {showCustomTimeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
-          <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
-            <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
-              <Clock className={`w-4 h-4 ${theme.textClass}`} strokeWidth={1} />{" "}
-              log custom time
-            </h2>
-            <div className="mb-8">
-              <input
-                type="time"
-                value={customTimeInput}
-                onChange={(e) => setCustomTimeInput(e.target.value)}
-                className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-2xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-colors duration-100 ease-linear"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCustomTimeModal(false)}
-                className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
-              >
-                cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (!customTimeInput || !nextDose) return;
-                  const [hours, minutes] = customTimeInput
-                    .split(":")
-                    .map(Number);
-                  const now = new Date();
-                  const customDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth(),
-                    now.getDate(),
-                    hours,
-                    minutes,
-                  );
-                  completeStep(nextDose.doseNumber, customDate.getTime());
-                  setShowCustomTimeModal(false);
-                }}
-                className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
-              >
-                log dose
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showCustomTimeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/90 sm:p-6"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="bg-panel border-t sm:border border-border-theme p-6 pt-8 sm:p-6 w-full max-w-sm"
+            >
+              <h2 className="text-lg text-foreground mb-2 tracking-wide font-medium">
+                log custom time
+              </h2>
+              <p className="text-subtext text-[13px] mb-8 leading-relaxed">
+                did you take your dose earlier? specify the exact time below to keep your timeline accurate.
+              </p>
+              <div className="mb-8">
+                <input
+                  type="time"
+                  value={customTimeInput}
+                  onChange={(e) => setCustomTimeInput(e.target.value)}
+                  className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-3xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-all duration-100 ease-linear tracking-tighter"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCustomTimeModal(false)}
+                  className="flex-1 py-4 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-all duration-100 ease-linear active:scale-95"
+                >
+                  cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!customTimeInput || !nextDose) return;
+                    const [hours, minutes] = customTimeInput
+                      .split(":")
+                      .map(Number);
+                    const now = new Date();
+                    const customDate = new Date(
+                      now.getFullYear(),
+                      now.getMonth(),
+                      now.getDate(),
+                      hours,
+                      minutes,
+                    );
+                    completeStep(nextDose.doseNumber, customDate.getTime());
+                    setShowCustomTimeModal(false);
+                  }}
+                  className={`flex-1 py-4 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-all duration-100 ease-linear active:scale-95`}
+                >
+                  log dose
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* EDIT DOSE TIME MODAL */}
-      {showEditDoseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-6">
-          <div className="bg-panel border border-border-theme p-6 max-w-sm w-full">
-            <h2 className="text-lg text-foreground mb-4 tracking-wide flex items-center gap-2">
-              <Clock className={`w-4 h-4 ${theme.textClass}`} strokeWidth={1} />{" "}
-              edit dose {editingDoseNumber ? String(editingDoseNumber).padStart(2, "0") : ""}
-            </h2>
-            <div className="mb-8">
-              <input
-                type="time"
-                value={editDoseTimeInput}
-                onChange={(e) => setEditDoseTimeInput(e.target.value)}
-                className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-2xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-colors duration-100 ease-linear"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowEditDoseModal(false)}
-                className="flex-1 py-3 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-colors duration-100 ease-linear"
-              >
-                cancel
-              </button>
-              <button
-                onClick={applyEditedDoseTime}
-                className={`flex-1 py-3 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-colors duration-100 ease-linear`}
-              >
-                save time
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showEditDoseModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/90 sm:p-6"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="bg-panel border-t sm:border border-border-theme p-6 pt-8 sm:p-6 w-full max-w-sm"
+            >
+              <h2 className="text-lg text-foreground mb-2 tracking-wide font-medium">
+                edit dose {editingDoseNumber ? String(editingDoseNumber).padStart(2, "0") : ""}
+              </h2>
+              <p className="text-subtext text-[13px] mb-8 leading-relaxed">
+                adjust the scheduled time for this dose. subsequent doses will automatically shift to maintain your intervals.
+              </p>
+              <div className="mb-8">
+                <input
+                  type="time"
+                  value={editDoseTimeInput}
+                  onChange={(e) => setEditDoseTimeInput(e.target.value)}
+                  className="w-full bg-background border border-border-theme text-foreground p-4 font-sans text-3xl appearance-none rounded-none focus:outline-none focus:border-foreground transition-all duration-100 ease-linear tracking-tighter"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowEditDoseModal(false)}
+                  className="flex-1 py-4 border border-border-theme bg-surface text-foreground tracking-[0.05em] text-[13px] hover:bg-foreground hover:text-background transition-all duration-100 ease-linear active:scale-95"
+                >
+                  cancel
+                </button>
+                <button
+                  onClick={applyEditedDoseTime}
+                  className={`flex-1 py-4 border border-border-theme ${theme.bgClass} text-white tracking-[0.05em] text-[13px] font-semibold hover:brightness-110 transition-all duration-100 ease-linear active:scale-95`}
+                >
+                  save time
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* CHEER OVERLAY */}
       <AnimatePresence>
         {cheerMsg && (

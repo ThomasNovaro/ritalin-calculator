@@ -505,8 +505,17 @@ export default function AppClient({
             </motion.div>
           </header>
 
-          {!isStarted ? (
-            <motion.section layout className="space-y-8 will-change-transform">
+          <AnimatePresence mode="wait">
+            {!isStarted ? (
+              <motion.section
+                key="setup"
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -40, scale: 0.95, filter: "blur(8px)" }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="space-y-8 will-change-transform"
+              >
               <div className="space-y-4">
                 <h2 className="font-serif text-2xl font-black tracking-tight">
                   Protocol
@@ -606,17 +615,23 @@ export default function AppClient({
                 </motion.button>
               ) : null}
             </motion.section>
-          ) : null}
-
-          {isStarted && !isAllComplete && nextDose ? (
-            <motion.section
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative"
-              style={{ willChange: "transform, opacity" }}
+          ) : (
+            <motion.div
+              key="active-dashboard"
+              initial={{ opacity: 0, y: 40, scale: 0.95, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.5, type: "spring", bounce: 0.3, delay: 0.1 }}
+              className="space-y-6 will-change-transform"
             >
-              <div
-                className={cn(
+              {!isAllComplete && nextDose ? (
+                <motion.section
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative"
+                  style={{ willChange: "transform, opacity" }}
+                >
+                  <div
+                    className={cn(
                   "p-8 rounded-[2rem] border-4 border-[#1A1A1A] dark:border-[#333] shadow-[8px_8px_0px_#1a1a1a] dark:shadow-[8px_8px_0px_#000] overflow-hidden bg-white dark:bg-[#111]",
                 )}
               >
@@ -760,9 +775,8 @@ export default function AppClient({
             </motion.div>
           ) : null}
 
-          {isStarted ? (
-            <motion.section layout className="pt-4 space-y-6">
-              <div className="flex items-center justify-between px-2">
+          <motion.section layout className="pt-4 space-y-6">
+            <div className="flex items-center justify-between px-2">
                 <button
                   onClick={() => setShowFullSchedule(!showFullSchedule)}
                   className="font-sans font-bold text-[10px] uppercase tracking-widest opacity-50 hover:opacity-100 flex items-center gap-2 transition-opacity"
@@ -886,7 +900,9 @@ export default function AppClient({
                 ) : null}
               </AnimatePresence>
             </motion.section>
-          ) : null}
+            </motion.div>
+          )}
+          </AnimatePresence>
         </main>
       </div>
       </LayoutGroup>
