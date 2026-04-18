@@ -471,10 +471,26 @@ function AppContent() {
         "serviceWorker" in navigator
       ) {
         navigator.serviceWorker.ready.then((registration) => {
+          const notificationVariants = [
+            "Hey bestie! Time for your meds! 🥰",
+            "I'm not mad, just disappointed... take your dose before I cry. 🥺",
+            "Your dopamine delivery is here! 📦",
+            "If you ignore me, I'll just keep bothering you. Pill time. 🙄",
+            "Look at you, doing so well today! Let's keep it up—take your meds! ✨",
+            "Knock knock! It's your friendly reminder! 🚪",
+            "I know you're busy, but your brain needs this. 🧠",
+            "Time to re-up your focus stats! 📊",
+            "I've been waiting all day to remind you! 🤩",
+            "Don't make me sad. Take your meds! 💧",
+            "It's me again! Did you miss me? Time for your pills! 🦉",
+            "Please take your meds so I can stop worrying about you. 😩",
+          ];
+          const randomMessage = notificationVariants[Math.floor(Math.random() * notificationVariants.length)];
+          
           registration.showNotification(
             `dose ${String(nextDose.doseNumber).padStart(2, "0")} ready`,
             {
-              body: `it is time for your next dose (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
+              body: `${randomMessage} (${nextDose.portions} pill${nextDose.portions > 1 ? "s" : ""}).`,
               vibrate: [200, 100, 200, 100, 200],
               tag: `dose-${nextDose.doseNumber}`,
               requireInteraction: true,
