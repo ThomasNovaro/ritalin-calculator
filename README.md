@@ -1,122 +1,84 @@
-# Pokémon Med
+# dose
 
-A daily Ritalin medication tracking and scheduling application. Schedule doses throughout your day, receive notifications when it's time to take your medication, and track your progress—all with a clean, minimal interface.
+A small, private PWA built to help someone remember medication on time.
 
-## Features
+This app was made with care for a friend who wanted a simple, reliable way to stay on top of daily medication reminders. It's designed to be easy to use, calm to look at, and focused on one job: helping with daily consistency.
 
-- **Three Protocol Levels**: Choose from three dosage protocols (Charmander, Charmeleon, Charizard) with different intensity levels and dose counts
-- **Smart Scheduling**: Automatically calculates dose times based on pill portions and spacing requirements
-- **Time Cutoff**: Respects an 18:00 (6 PM) cutoff to prevent sleep disruption
-- **Notifications**: Receive browser notifications when it's time for your next dose
-- **Progress Tracking**: Visual display of completed doses vs. remaining doses
-- **Dose Logging**: Hold-to-confirm button for logging when you've taken each dose
-- **Schedule Management**: View full schedule, toggle visibility of past doses, and undo recent entries
-- **Persistent Storage**: All schedules and progress saved to local storage
-- **Shareable Links**: Share your current schedule configuration via URL parameters
+## Why this exists
 
-## Getting Started
+Taking medication on schedule can be easy to forget during a busy day. This app helps by giving you a clear start point, showing what comes next, and keeping your full schedule visible at a glance. No complicated setup, no noise—just reminders that work.
 
-### Prerequisites
-- Node.js (v18 or higher)
-- Bun (for running with the bundler)
+## What it does
 
-### Installation
+- Set up a medication schedule in seconds
+- See your next reminder clearly
+- Track progress through the day
+- Get browser notifications when reminders are due
+- Save everything locally in your browser
+- Install as a PWA for an app-like experience on desktop and mobile
+
+## Getting started
+
+### Requirements
+
+- Node.js 18 or higher
+- Bun
+
+### Install and run locally
 
 ```bash
 git clone <repo-url>
 cd ritalin-calculator
 bun install
-```
-
-### Development
-
-```bash
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000` in your browser.
 
-### Production Build
+### Build for production
 
 ```bash
 bun run build
 bun run start
 ```
 
-## How It Works
+## How it works
 
-### Setting Up Your Protocol
+1. **Choose a schedule**: Pick how many reminders you want throughout the day
+2. **Set a start time**: Pick when you'll take your first dose (or use "now")
+3. **Start your day**: The app shows your next reminder and tracks your progress
+4. **Get notified**: Browser notifications remind you when it's time
+5. **Log completion**: Tap and hold to confirm when you've taken each dose
 
-1. **Select a Protocol Level**:
-   - **Charmander** (Soft Focus): 6 doses throughout the day
-   - **Charmeleon** (Deep Work): 4 doses throughout the day
-   - **Charizard** (Overdrive): 3 doses throughout the day
+The app automatically spaces out reminders and stops adding new ones after 6 PM to avoid sleep disruption. If your schedule would run too late, you'll see a warning and can adjust.
 
-2. **Set Your Start Time**: Choose when you'll take your first dose (or tap "Now")
+## Privacy and data
 
-3. **Engage Protocol**: Start your schedule
+- **Everything stays on your device** — no data is sent to any server
+- Schedule and progress are stored in your browser's local storage
+- If you clear your browser data, your schedule will be reset
+- The app works offline once loaded
 
-### During the Day
+## Accessibility
 
-- The app displays your **next dose time** prominently
-- Your **current progress** shows pills completed vs. total pills
-- **Hold the button** to log when you've consumed each dose
-- **Schedule list** shows all upcoming and completed doses
-- **Notifications** alert you when it's time for your next dose
+This app is built to be as straightforward as possible:
 
-### Dose Spacing
+- Clear visual hierarchy with large, easy-to-tap buttons
+- Minimal steps to get started
+- Browser notifications instead of requiring a separate app
+- Works on phones, tablets, and desktop
 
-The app automatically calculates spacing based on pill portions:
-- Single-pill doses: 105 minutes apart
-- Multi-pill doses: 210 minutes apart
+If you find something hard to use or understand, please open an issue.
 
-### Schedule Adjustments
+## Tech stack
 
-If your schedule would extend past 6 PM, the app will:
-- Show a warning modal
-- Allow you to proceed with a truncated schedule
-- Automatically cutoff doses after 18:00
-
-## Technology Stack
-
-- **Frontend**: React 19 with TypeScript
 - **Framework**: Next.js 16
+- **Language**: React 19 with TypeScript
 - **Styling**: Tailwind CSS v4
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **Notifications**: Service Workers + Notifications API
 - **Runtime**: Bun
 
-## Browser Support
+## Important note
 
-- Chrome/Edge 88+
-- Firefox 87+
-- Safari 14+
-- Requires support for:
-  - Desktop Notifications API
-  - Service Workers
-  - LocalStorage
-
-## Privacy & Data
-
-All data is stored **locally in your browser**. No information is sent to external servers. Your schedule and progress remain on your device.
-
-## Customization
-
-### Modifying Protocols
-
-Edit the `PROTOCOLS` object in `app/page.tsx` to change:
-- Number of doses (`maxDoses`)
-- Pill portions per dose (`portions` array)
-
-### Theme Colors
-
-The `THEMES` object in `app/page.tsx` controls the color scheme for each protocol level.
-
-## Notes
-
-This app is designed as a personal medication tracking tool. Always consult with your healthcare provider about your medication schedule and dosing. This app does not provide medical advice.
-
-## License
-
-Private project. All rights reserved.
+This app is a reminder tool only. It does not provide medical advice and is not a substitute for guidance from your healthcare provider. Always follow your doctor's instructions for your medication schedule.
